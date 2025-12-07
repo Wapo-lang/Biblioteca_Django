@@ -1,0 +1,25 @@
+{%extends "index.html"%}
+<!--Seccion de autores-->
+{%block contenido%}
+<h2> LIBROS </h2>
+<table style="border: 1px solid">
+    <tr style="border: 1px solid">
+        <td style="border: 1px solid">Titulo</td>
+        <td style="border: 1px solid">Autor</td>
+        <td style="border: 1px solid">Disponible</td>
+    </tr>
+    {% for libro in libros %}
+    <tr style="border: 1px solid">
+        <td style="border: 1px solid">
+            {{ libro.titulo }}
+        </td>
+        <td style="border: 1px solid">
+            {{ autor.autor }}
+        </td>
+        <td style="border: 1px solid">
+            {{ autor.disponible}}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{%endblock%}

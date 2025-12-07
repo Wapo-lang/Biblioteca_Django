@@ -1,0 +1,18 @@
+{% extends "index.html" %}
+
+{% block contenido %}
+<h2>Crear Autor </h2>
+<form method= "POST">
+    {% csrf_token %}
+    <lable for= "id_nombre" name="nombre">Nombre:</lable>
+    <input type="text" id="id_nombre" name="nombre" required><br/>
+
+    <lable for= "id_apellido" name="apellido">Apellido:</lable>
+    <input type="text" id="id_apellido" name="apellido" required><br/>
+
+    <lable for= "id_bibliografia" name="bibliografia">Bibliografia:</lable>
+    <input type="text" id="id_bibliografia" name="bibliografia" required><br/>
+
+    <button type="submit">Guardar</button>
+</form>
+{%endblock%}

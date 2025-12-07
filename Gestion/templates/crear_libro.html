@@ -1,0 +1,23 @@
+{% extends "index.html"%}
+
+{%block contenido %}
+<h2>Crear Libro </h2>
+
+<form method= "POST">
+    {% csrf_token%}
+    <lable for= "id_titulo" name="titulo">Titulo:</lable>
+    <input type="text" id="id_titulo" name="titulo" required><br/>
+
+    <lable for= "id_autor" name="autor">Autor:</lable>
+    <input type="text" id="id_autor" name="autor" required><br/>
+    <select id="id_autor" name="autor" required>
+        <option value="">--seleccione un autor--</option>
+        {% for autor in autores %}
+        <option value="{{ autor.id }}">
+            {{ autor.nombre }} - {{ autor.apellido }}
+        </option>
+        {%endfor%}
+    </select>
+    <button type="submit">Guardar</button>
+</form>
+{%endblock%}
