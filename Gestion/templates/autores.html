@@ -1,0 +1,101 @@
+{% extends 'index.html' %}
+
+{% block contenido %}
+<style>
+    /* Fondo estilo biblioteca */
+    body {
+        background: url('https://i.imgur.com/0mKXcgU.jpg') no-repeat center center fixed;
+        background-size: cover;
+    }
+
+    /* Encabezado decorativo */
+    .titulo-autores {
+        background: #5a3825;
+        color: #f5e6ca;
+        padding: 25px;
+        border-radius: 15px;
+        font-size: 32px;
+        font-weight: 800;
+        box-shadow: 0 6px 25px rgba(0,0,0,0.4);
+        font-family: "Georgia", serif;
+        border: 2px solid #d2b48c;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+    }
+
+    /* Tarjeta tipo pergamino */
+    .card-autores {
+        background: #f8f1e4;
+        border-radius: 18px;
+        border: 2px solid #d2b48c;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.25);
+        font-family: "Georgia", serif;
+    }
+
+    /* Tabla estilo antiguo */
+    .tabla-autores thead {
+        background: #5a3825;
+        color: #f5e6ca;
+        border-bottom: 2px solid #d2b48c;
+    }
+
+    .tabla-autores tbody tr {
+        border-bottom: 1px solid #d2b48c;
+    }
+
+    .tabla-autores tbody tr:hover {
+        background: rgba(210, 180, 140, 0.25);
+        transition: 0.3s ease;
+    }
+
+    /* Estilo de textos */
+    .tabla-autores td, .tabla-autores th {
+        font-size: 17px;
+        font-family: "Georgia", serif;
+    }
+
+    .fw-bold {
+        color: #4b2e19;
+    }
+</style>
+
+<div class="container py-5">
+
+    <div class="text-center mb-4">
+        <div class="titulo-autores shadow">
+            ✍️ LISTA DE AUTORES
+        </div>
+    </div>
+
+    <div class="card card-autores">
+        <div class="card-body p-4">
+
+            {% if autores %}
+            <div class="table-responsive">
+                <table class="table tabla-autores table-hover align-middle text-center">
+                    <thead>
+                        <tr>
+                            <th>📛 Nombre</th>
+                            <th>👤 Apellido</th>
+                            <th>📖 Bibliografía</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for autor in autores %}
+                        <tr>
+                            <td class="fw-bold">{{ autor.nombre }}</td>
+                            <td class="fw-bold">{{ autor.apellido }}</td>
+                            <td class="text-muted">{{ autor.bibliografia|truncatewords:20 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <p class="text-center text-muted">No hay autores registrados aún.</p>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+{% endblock %}

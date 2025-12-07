@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Biblioteca</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <style>
+        /* Fondo estilo pergamino */
+        body {
+            background: #f5f1e6;
+            color: #3c2f21;
+            font-family: "Georgia", serif;
+        }
+
+        /* NAVBAR estilo madera clásica */
+        .navbar {
+            background: linear-gradient(90deg, #7a5230, #5a3c22);
+            border-bottom: 3px solid #d8c3a5;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+        }
+
+        .navbar-brand, .nav-link {
+            color: #f8e8c8 !important;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-shadow: 0 2px 3px rgba(0,0,0,0.4);
+        }
+
+        .nav-link:hover {
+            color: #ffdd9b !important;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+
+        /* HEADER estilo portada de libro */
+        .header-section {
+            padding: 60px 0;
+            text-align: center;
+            background: linear-gradient(90deg, #d8c3a5, #e9d7c0, #d8c3a5);
+            color: #4a3a28;
+            border-bottom: 5px solid #b08968;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+
+        .header-section h1 {
+            font-size: 48px;
+            font-weight: 900;
+            font-family: "Georgia", serif;
+            letter-spacing: 3px;
+            text-shadow: 0 3px 4px rgba(0,0,0,0.3);
+        }
+
+        .header-section p {
+            font-size: 18px;
+            opacity: 0.9;
+            font-style: italic;
+        }
+
+        /* TARJETAS estilo estante */
+        .card-custom {
+            background: #fffdf7;
+            border: 2px solid #c9a77c;
+            border-radius: 12px;
+            box-shadow: 0 5px 18px rgba(0,0,0,0.15);
+            padding: 15px;
+            transition: 0.2s ease;
+        }
+
+        .card-custom:hover {
+            transform: scale(1.01);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+        }
+
+        .card-title {
+            color: #6a4e33;
+            font-weight: bold;
+            font-size: 22px;
+        }
+
+        /* Botones estilo clásico */
+        .btn-primary {
+            background: #7a5230;
+            border: none;
+            color: #f8e8c8;
+        }
+
+        .btn-primary:hover {
+            background: #5a3c22;
+            color: #fff3d1;
+        }
+
+        .btn-secondary {
+            background: #b08968;
+            border: none;
+            color: #fff;
+        }
+
+        .btn-secondary:hover {
+            background: #8f6d4c;
+        }
+    </style>
+</head>
+
+<body>
+
+<nav class="navbar navbar-expand-lg">
+    <div class="container-fluid">
+        <a class="navbar-brand" href="#">📚 Biblioteca</a>
+
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <span class="navbar-toggler-icon" style="filter: invert(1);"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto">
+                <li class="nav-item"><a class="nav-link" href="#libros">Libros</a></li>
+                <li class="nav-item"><a class="nav-link" href="#autores">Autores</a></li>
+                <li class="nav-item"><a class="nav-link" href="#prestamos">Préstamos</a></li>
+                <li class="nav-item"><a class="nav-link" href="#multas">Multas</a></li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<header class="header-section">
+    <h1>Sistema de Gestión de Biblioteca</h1>
+    <p>Control de libros, autores, préstamos y multas</p>
+</header>
+
+<main class="container py-4">
+    {% block contenido %}
+    {% endblock %}
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
