@@ -23,7 +23,7 @@ def crear_libro(request):
             autor = get_object_or_404(Autor, id=autor_id)
             Libro.objects.create(titulo=titulo, autor=autor)
             return redirect('lista_libros')
-    return render(request, 'gestion/templates/crear_libro.html', {'autores': autores})
+    return render(request, 'gestion/templates/templates_crear/crear_libro.html', {'autores': autores})
 
 def lista_autores(request):
     autores = Autor.objects.all()
@@ -36,7 +36,7 @@ def crear_autor(request):
         bibliografia = request.POST.get('bibliografia')
         Autor.objects.create(nombre=nombre, apellido=apellido, bibliografia=bibliografia)
         return redirect('lista_autores')
-    return render(request, 'gestion/templates/crear_autor.html')
+    return render(request, 'gestion/templates/templates_crear/crear_autor.html')
 
 def lista_prestamos(request):
     prestamos = Prestamos.objects.all()
@@ -54,5 +54,6 @@ def lista_multa(request):
 
 def crear_multa(request):
     pass
+    
 
 # Create your views here.

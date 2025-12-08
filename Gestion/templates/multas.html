@@ -1,0 +1,34 @@
+{% extends "index.html" %}
+
+{% block contenido %}
+<h2> MULTAS </h2>
+
+<table style="border: 1px solid; border-collapse: collapse; width: 100%;">
+    <tr style="border: 1px solid">
+        <td style="border: 1px solid; padding: 5px;">Usuario</td>
+        <td style="border: 1px solid; padding: 5px;">Libro</td>
+        <td style="border: 1px solid; padding: 5px;">Monto</td>
+        <td style="border: 1px solid; padding: 5px;">Fecha</td>
+    </tr>
+
+    {% for multa in multas %}
+    <tr style="border: 1px solid">
+        <td style="border: 1px solid; padding: 5px;">
+            {{ multa.usuario }}
+        </td>
+
+        <td style="border: 1px solid; padding: 5px;">
+            {{ multa.libro }}
+        </td>
+
+        <td style="border: 1px solid; padding: 5px;">
+            ${{ multa.monto }}
+        </td>
+
+        <td style="border: 1px solid; padding: 5px;">
+            {{ multa.fecha }}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}
