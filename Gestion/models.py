@@ -15,7 +15,7 @@ class Libro(models.Model):
     titulo = models.CharField(max_length=50)
     autor = models.ForeignKey(Autor, related_name="libros", on_delete=models.PROTECT)
     disponible = models.BooleanField(default=True)
-    fecha_publicacion = models.DateField()
+    fecha_publicacion = models.DateField(blank=True, null=True)
 
     def __str__(self):
         return self.titulo

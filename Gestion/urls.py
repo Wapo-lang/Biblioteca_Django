@@ -10,7 +10,8 @@ urlpatterns = [
 
     #autores
     path('autores/', lista_autores, name='lista_autores'),
-    path('autores/nuevo', crear_autor, name='crear_autores'),
+    path('autores/nuevo', crear_autor, name='crear_autor'),
+    path('autores/<int:id>/editar', crear_autor, name='editar_autor'),
 
     #prestamos
     path('prestamos/', lista_prestamos, name='lista_prestamos'),

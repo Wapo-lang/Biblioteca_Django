@@ -55,7 +55,7 @@
     }
 
     .fw-bold {
-        color: #4b2e19;
+        color: #f5f1e6;
     }
 </style>
 
@@ -86,6 +86,9 @@
                             <td class="fw-bold">{{ autor.nombre }}</td>
                             <td class="fw-bold">{{ autor.apellido }}</td>
                             <td class="text-muted">{{ autor.bibliografia|truncatewords:20 }}</td>
+                            <td>
+                                <a href="{% url 'editar_autor' autor.id %}" >Editar</a>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>

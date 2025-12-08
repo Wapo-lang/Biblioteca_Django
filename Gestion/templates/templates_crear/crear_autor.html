@@ -1,17 +1,17 @@
 {% extends "index.html" %}
 
 {% block contenido %}
-<h2>Crear Autor </h2>
+<h2>{{ titulo }} </h2>
 <form method= "POST">
     {% csrf_token %}
     <lable for= "id_nombre" name="nombre">Nombre:</lable>
-    <input type="text" id="id_nombre" name="nombre" required><br/>
+    <input type="text" id="id_nombre" name="nombre" value="{{ autor.nombre | default_if_none:'' }}" required><br/>
 
     <lable for= "id_apellido" name="apellido">Apellido:</lable>
-    <input type="text" id="id_apellido" name="apellido" required><br/>
+    <input type="text" id="id_apellido" name="apellido" value="{{ autor.apellido | default_if_none:'' }}" required><br/>
 
     <lable for= "id_bibliografia" name="bibliografia">Bibliografia:</lable>
-    <input type="text" id="id_bibliografia" name="bibliografia" required><br/>
+    <input type="text" id="id_bibliografia" name="bibliografia" value="{{ autor.bibliografia | default_if_none:'' }}" required><br/>
 
     <button type="submit">Guardar</button>
 </form>

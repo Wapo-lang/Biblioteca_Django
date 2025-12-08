@@ -1,0 +1,28 @@
+{% extends "index.html" %}
+
+{% block contenido %}
+<h2>Crear Prestamo </h2>
+<form method= "POST">
+    {% csrf_token %}
+    <label for= "id_libro" name="libro">Libro:</label>
+    <select type="text" id="id_libro" name="libro" required><br/>
+        <option value ="" >--Seleccionar Libro--</option>
+        {% for libro in libros %}
+            <option value ="{{ libro.id }}" >{{ libro.titulo }}</option>
+        {% endfor %}
+    </select><br/>
+
+    <label for= "id_usuario" name="autor">Usuario:</label>
+    <select type="text" id="id_usuario" name="usuario" required><br/>
+        <option value ="" >--Seleccionar Usuario--</option>
+        {% for usuario in usuarios %}
+            <option value ="{{ usuario.id }}" >{{usuario.username}}</option>
+        {% endfor %}
+    </select><br/>
+    
+    <label for= "id_fecha_prestamo" name="fecha_prestamo">Fecha Prestamo:</label>
+    <input type="date" id="id_fecha_prestamo" name="fecha_prestamo" value="{{fecha}}" required><br/>
+
+    <button type="submit">Guardar</button>
+</form>
+{%endblock%}
