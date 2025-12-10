@@ -13,6 +13,8 @@ urlpatterns = [
     path('password_change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
     path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(), name='password_change_done'),
 
+    path('registro/', registro, name='registro'),
+
     #libros
     path('libros/', lista_libros, name='lista_libros'),
     path('libros/nuevo', crear_libro, name='crear_libro'),

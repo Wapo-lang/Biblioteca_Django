@@ -1,21 +1,102 @@
-{ % extends "index.html" %}
+{% extends "index.html" %}
 
-{ % block contenido % }
+{% block contenido %}
 
-<h2> Iniciar Sesión </h2>
-{% if form.errors %}
-    <p> class="text-danger"> Usuario o contraseña incorrectos. Por favor, inténtelo de nuevo. </p>
-{% endif %}
+<style>
+    .login-container {
+        max-width: 420px;
+        margin: 60px auto;
+        background: #fffaf2;
+        border: 2px solid #d4b894;
+        border-radius: 14px;
+        padding: 30px;
+        box-shadow: 0 6px 20px rgba(80, 55, 35, 0.3);
+        font-family: "Georgia", serif;
+        color: #4a372a;
+        position: relative;
+    }
 
-<form method = "POST">
-    { % csrf_token % }
-    <label for="id_username"> Usuario: </label>
-    <input type="text" name="username" id="id_username" required/> <br>
+    .login-container::before {
+        content: "";
+        width: 100%;
+        height: 12px;
+        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
+        position: absolute;
+        top: 0;
+        left: 0;
+        border-top-left-radius: 12px;
+        border-top-right-radius: 12px;
+    }
 
-    <label for="id_password"> Contraseña: </label>
-    <input type="password" name="password" id="id_password" required/> <br>
+    .login-title {
+        text-align: center;
+        margin-bottom: 25px;
+        font-weight: bold;
+        color: #5a3825;
+        text-shadow: 1px 1px #d6c1a5;
+    }
 
-    button type="submit"> Iniciar Sesión </button>
-</form>
+    .form-label {
+        font-weight: bold;
+        margin-top: 10px;
+    }
 
-{ % endblock % }
+    .form-control {
+        background: #fffdf7;
+        border: 1px solid #c5a886;
+        border-radius: 8px;
+        padding: 10px;
+        font-size: 16px;
+    }
+
+    .form-control:focus {
+        border-color: #8b5e34;
+        box-shadow: 0 0 6px rgba(139, 94, 52, 0.4);
+    }
+
+    .btn-login {
+        background: #8b5e34;
+        color: #fff;
+        width: 100%;
+        padding: 10px;
+        margin-top: 20px;
+        font-weight: bold;
+        border-radius: 8px;
+        border: none;
+    }
+
+    .btn-login:hover {
+        background: #6d4828;
+        color: #fff7e6;
+    }
+
+    .error-text {
+        color: #b82d2d;
+        font-weight: bold;
+        margin-bottom: 10px;
+        text-align: center;
+    }
+</style>
+
+<div class="login-container">
+    
+    <h2 class="login-title">🔐 Iniciar Sesión</h2>
+
+    {% if form.errors %}
+        <p class="error-text">Usuario o contraseña incorrectos. Intente nuevamente.</p>
+    {% endif %}
+
+    <form method="POST">
+        {% csrf_token %}
+
+        <label for="id_username" class="form-label">Usuario:</label>
+        <input type="text" name="username" id="id_username" class="form-control" required>
+
+        <label for="id_password" class="form-label">Contraseña:</label>
+        <input type="password" name="password" id="id_password" class="form-control" required>
+
+        <button type="submit" class="btn-login">Iniciar Sesión</button>
+    </form>
+</div>
+
+{% endblock %}

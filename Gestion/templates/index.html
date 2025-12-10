@@ -131,6 +131,16 @@
                 <li class="nav-item"><a class="nav-link" href="#autores">Autores</a></li>
                 <li class="nav-item"><a class="nav-link" href="#prestamos">Préstamos</a></li>
                 <li class="nav-item"><a class="nav-link" href="#multas">Multas</a></li>
+                {% if not user.is_authenticated %}
+                <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Ingresar</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'registro' %}">Registrarse</a></li>
+                {% endif %}
+                {% if user.is_authenticated %}
+                <form method="POST" action="{% url 'logout' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary ms-3">Cerrar Sesión</button>
+                </form>
+                {% endif %}
             </ul>
         </div>
     </div>
