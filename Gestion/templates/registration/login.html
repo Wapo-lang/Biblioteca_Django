@@ -1,0 +1,21 @@
+{ % extends "index.html" %}
+
+{ % block contenido % }
+
+<h2> Iniciar Sesión </h2>
+{% if form.errors %}
+    <p> class="text-danger"> Usuario o contraseña incorrectos. Por favor, inténtelo de nuevo. </p>
+{% endif %}
+
+<form method = "POST">
+    { % csrf_token % }
+    <label for="id_username"> Usuario: </label>
+    <input type="text" name="username" id="id_username" required/> <br>
+
+    <label for="id_password"> Contraseña: </label>
+    <input type="password" name="password" id="id_password" required/> <br>
+
+    button type="submit"> Iniciar Sesión </button>
+</form>
+
+{ % endblock % }

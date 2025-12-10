@@ -1,28 +1,127 @@
 {% extends "index.html" %}
 
 {% block contenido %}
-<h2>Crear Prestamo </h2>
-<form method= "POST">
-    {% csrf_token %}
-    <label for= "id_libro" name="libro">Libro:</label>
-    <select type="text" id="id_libro" name="libro" required><br/>
-        <option value ="" >--Seleccionar Libro--</option>
-        {% for libro in libros %}
-            <option value ="{{ libro.id }}" >{{ libro.titulo }}</option>
-        {% endfor %}
-    </select><br/>
 
-    <label for= "id_usuario" name="autor">Usuario:</label>
-    <select type="text" id="id_usuario" name="usuario" required><br/>
-        <option value ="" >--Seleccionar Usuario--</option>
-        {% for usuario in usuarios %}
-            <option value ="{{ usuario.id }}" >{{usuario.username}}</option>
-        {% endfor %}
-    </select><br/>
-    
-    <label for= "id_fecha_prestamo" name="fecha_prestamo">Fecha Prestamo:</label>
-    <input type="date" id="id_fecha_prestamo" name="fecha_prestamo" value="{{fecha}}" required><br/>
+<style>
+    /* Fondo y textos estilo libro antiguo */
+    body {
+        background: #f4eee0;
+        font-family: "Georgia", serif;
+        color: #4a372a;
+    }
 
-    <button type="submit">Guardar</button>
-</form>
-{%endblock%}
+    .library-title {
+        color: #5a3825;
+        font-weight: bold;
+        text-shadow: 1px 1px #d6c1a5;
+    }
+
+    /* Tarjeta estilo estante */
+    .library-card {
+        background: #fff9f1;
+        border: 2px solid #d4b894;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(80, 55, 35, 0.25);
+        padding: 20px;
+        position: relative;
+    }
+
+    /* Franja madera arriba */
+    .library-card::before {
+        content: "";
+        width: 100%;
+        height: 12px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
+    }
+
+    .form-label {
+        font-weight: bold;
+        color: #5c422e;
+    }
+
+    .form-select,
+    .form-control {
+        background: #fffdf8;
+        border: 1px solid #c5a886;
+        color: #4a372a;
+    }
+
+    .form-select:focus,
+    .form-control:focus {
+        border-color: #8b5e34;
+        box-shadow: 0 0 6px rgba(139, 94, 52, 0.4);
+    }
+
+    .btn-library {
+        background-color: #8b5e34;
+        border: none;
+        color: #fff;
+        font-weight: bold;
+        padding: 10px;
+    }
+
+    .btn-library:hover {
+        background-color: #6d4828;
+        color: #fff;
+    }
+</style>
+
+<div class="container mt-4">
+
+    <h2 class="text-center mb-4 library-title">📖 Crear Préstamo</h2>
+
+    <div class="library-card">
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- Libro -->
+            <div class="mb-3">
+                <label for="id_libro" class="form-label">Libro:</label>
+                <select id="id_libro" name="libro" class="form-select" required>
+                    <option value="">-- Seleccionar Libro --</option>
+                    {% for libro in libros %}
+                        <option value="{{ libro.id }}">{{ libro.titulo }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Usuario -->
+            <div class="mb-3">
+                <label for="id_usuario" class="form-label">Usuario:</label>
+                <select id="id_usuario" name="usuario" class="form-select" required>
+                    <option value="">-- Seleccionar Usuario --</option>
+                    {% for usuario in usuarios %}
+                        <option value="{{ usuario.id }}">{{ usuario.username }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- Fecha -->
+            <div class="mb-3">
+                <label for="id_fecha_prestamo" class="form-label">Fecha de Préstamo:</label>
+                <input 
+                    type="date" 
+                    id="id_fecha_prestamo" 
+                    name="fecha_prestamo" 
+                    class="form-control"
+                    value="{{ fecha }}" 
+                    required
+                >
+            </div>
+
+            <button type="submit" class="btn btn-library w-100">
+                Guardar Préstamo 📚
+            </button>
+
+        </form>
+
+    </div>
+
+</div>
+
+{% endblock %}
+

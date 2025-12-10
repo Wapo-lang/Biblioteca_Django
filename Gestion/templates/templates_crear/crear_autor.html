@@ -1,18 +1,113 @@
 {% extends "index.html" %}
 
 {% block contenido %}
-<h2>{{ titulo }} </h2>
-<form method= "POST">
-    {% csrf_token %}
-    <lable for= "id_nombre" name="nombre">Nombre:</lable>
-    <input type="text" id="id_nombre" name="nombre" value="{{ autor.nombre | default_if_none:'' }}" required><br/>
 
-    <lable for= "id_apellido" name="apellido">Apellido:</lable>
-    <input type="text" id="id_apellido" name="apellido" value="{{ autor.apellido | default_if_none:'' }}" required><br/>
+<!-- Estilos personalizados estilo biblioteca -->
+<style>
+    body {
+        background: #f4eee0; /* beige suave */
+        font-family: "Georgia", serif;
+    }
 
-    <lable for= "id_bibliografia" name="bibliografia">Bibliografia:</lable>
-    <input type="text" id="id_bibliografia" name="bibliografia" value="{{ autor.bibliografia | default_if_none:'' }}" required><br/>
+    .library-title {
+        color: #5a3825; /* café oscuro */
+        font-weight: bold;
+        text-shadow: 1px 1px #d6c1a5;
+    }
 
-    <button type="submit">Guardar</button>
-</form>
-{%endblock%}
+    .library-card {
+        background: #fff9f1;
+        border: 2px solid #d4b894;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(88, 66, 40, 0.25);
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Efecto "madera" en el borde superior */
+    .library-card::before {
+        content: "";
+        width: 100%;
+        height: 12px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
+    }
+
+    .form-label {
+        color: #5c422e;
+        font-weight: bold;
+    }
+
+    .btn-library {
+        background-color: #8b5e34;
+        border: none;
+        color: #fff;
+        font-weight: bold;
+    }
+
+    .btn-library:hover {
+        background-color: #6d4828;
+        color: #fff;
+    }
+</style>
+
+<div class="container mt-4">
+
+    <h2 class="mb-4 library-title text-center">
+        📖 {{ titulo }}
+    </h2>
+
+    <div class="card library-card p-4">
+
+        <form method="POST">
+            {% csrf_token %}
+
+            <!-- Nombre -->
+            <div class="mb-3">
+                <label for="id_nombre" class="form-label">Nombre del Autor:</label>
+                <input 
+                    type="text" 
+                    id="id_nombre" 
+                    name="nombre"
+                    class="form-control"
+                    value="{{ autor.nombre|default_if_none:'' }}" 
+                    required
+                >
+            </div>
+
+            <!-- Apellido -->
+            <div class="mb-3">
+                <label for="id_apellido" class="form-label">Apellido:</label>
+                <input 
+                    type="text" 
+                    id="id_apellido" 
+                    name="apellido"
+                    class="form-control"
+                    value="{{ autor.apellido|default_if_none:'' }}" 
+                    required
+                >
+            </div>
+
+            <!-- Bibliografía -->
+            <div class="mb-3">
+                <label for="id_bibliografia" class="form-label">Bibliografía:</label>
+                <textarea 
+                    id="id_bibliografia" 
+                    name="bibliografia"
+                    class="form-control" 
+                    rows="3" 
+                    required>{{ autor.bibliografia|default_if_none:'' }}</textarea>
+            </div>
+
+            <!-- Botón -->
+            <button type="submit" class="btn btn-library w-100">
+                Guardar Autor 📚
+            </button>
+
+        </form>
+    </div>
+</div>
+
+{% endblock %}
