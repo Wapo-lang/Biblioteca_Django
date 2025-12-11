@@ -77,7 +77,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Agregar Libro</h5>
                         <p class="card-text">Registra nuevos libros en el catálogo.</p>
-                        <a href="#" class="btn btn-primary w-100">Agregar</a>
+                        <a href="{% url 'crear_libro' %}" class="btn btn-primary w-100">Agregar</a>
                     </div>
                 </div>
             </div>
@@ -87,7 +87,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Lista de Libros</h5>
                         <p class="card-text">Consulta todos los libros registrados.</p>
-                        <a href="#" class="btn btn-secondary w-100">Ver Lista</a>
+                        <a href="{% url 'lista_libros' %}" class="btn btn-secondary w-100">Ver Lista</a>
                     </div>
                 </div>
             </div>

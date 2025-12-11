@@ -127,10 +127,8 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="#libros">Libros</a></li>
-                <li class="nav-item"><a class="nav-link" href="#autores">Autores</a></li>
-                <li class="nav-item"><a class="nav-link" href="#prestamos">Préstamos</a></li>
-                <li class="nav-item"><a class="nav-link" href="#multas">Multas</a></li>
+                <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Inicio</a></li>
+
                 {% if not user.is_authenticated %}
                 <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Ingresar</a></li>
                 <li class="nav-item"><a class="nav-link" href="{% url 'registro' %}">Registrarse</a></li>
