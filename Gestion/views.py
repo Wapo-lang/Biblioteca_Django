@@ -108,7 +108,38 @@ def registro(request):
         form = UserCreationForm()
     return render(request, 'gestion/templates/registration/registro.html', {'form': form})
 
-
-    
-
 # Create your views here.
+from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.urls import reverse_lazy
+
+class LibroListView(LoginRequiredMixin, ListView):
+    model = Libro
+    template_name = 'gestion/templates/libro_view.html'
+    context_object_name = 'libros'
+    paginate_by = 1
+
+class LibroDetalleView(LoginRequiredMixin, DetailView):
+    model = Libro
+    template_name = 'gestion/templates/detalle_libro.html'
+    context_object_name = 'libro'
+
+class LibroCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
+    model = Libro
+    fields = ['titulo', 'autor', 'disponible']
+    template_name = 'gestion/templates/templates_crear/crear_libro.html'
+    success_url = reverse_lazy('libro_list')
+    permission_required = 'Gestion.add_libro'
+
+class LibroUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
+    model = Libro
+    fields = ['titulo', 'autor']
+    template_name = 'gestion/templates/editar_libro.html'
+    success_url = reverse_lazy('libro_list')
+    permission_required = 'Gestion.change_libro'
+
+class LibroDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Libro
+    template_name = 'gestion/templates/eliminar_libro.html'
+    success_url = reverse_lazy('libro_list')
+    permission_required = 'Gestion.delete_libro'

@@ -1,6 +1,8 @@
 {%extends "index.html"%}
 <!--Seccion de autores-->
 {%block contenido%}
+
+{{ page_obj }}
 <h2> LIBROS </h2>
 <table class="table table-striped">
     <thead>
@@ -21,4 +23,5 @@
         </tr>
         {% endfor %}
     </tbody>
+</table>
 {%endblock%}

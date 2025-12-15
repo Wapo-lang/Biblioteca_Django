@@ -5,6 +5,9 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('', index, name ='index'),
 
+    #Path class view
+    path('libros_list/', LibroListView.as_view(), name='libro_list'),
+
     #Gestion de Usuarios
     path('login/', auth_views.LoginView.as_view(), name = 'login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name = 'logout'),

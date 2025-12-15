@@ -1,0 +1,40 @@
+{% extends "index.html" %}
+
+{% block contenido %}
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Titulo</th>
+            <th>Autor</th>
+
+        </tr>
+    </thead>
+    <tbody>
+        {% for libro in libros %}
+        <tr>
+            <td>{{ libro.id }}</td>
+            <td>{{ libro.titulo }}</td>
+            <td>{{ libro.autor.nombre }} {{ libro.autor.apellido }}</td>
+
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{%if is_paginated %}
+<div class='pagination'>
+    {% if page_obj.has_previous %}
+    <a href="?page=1">Primera</a>
+    <a href="?page={{ page_obj.previous_page_number}}">Anterior</a>
+    {% endif %}
+    <span> {{ page_obj.numer }} de {{ page_obj.paginator.num_pages }}</span>
+
+    {% if page_obj.has_next %}
+    <a href="?page={{ page_obj.next_page_number }}">siguiente</a>
+    <a href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+    {% endif %}
+</div>
+{%endif%} 
+{% endblock %}
