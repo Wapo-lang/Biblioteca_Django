@@ -6,6 +6,7 @@ from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
+import requests
 
 from .models import Autor, Libro, Prestamos, Multa
 
@@ -19,13 +20,47 @@ def lista_libros(request):
 
 def crear_libro(request):
     autores = Autor.objects.all()
+    
     if request.method == 'POST':
-        titulo = request.POST.get('titulo')
-        autor_id = request.POST.get('autor')
-        if titulo and autor_id:
-            autor = get_object_or_404(Autor, id=autor_id)
-            Libro.objects.create(titulo=titulo, autor=autor)
+        # Si el usuario llenó el campo ISBN y pulsó el botón
+        isbn = request.POST.get('isbn')
+        
+        if isbn and 'buscar_api' in request.POST:
+            # 1. Llamada a la API
+            url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
+            data = requests.get(url).json()
+            key = f"ISBN:{isbn}"
+
+            if key in data:
+                libro_api = data[key]
+                # Preparamos los datos para enviarlos de vuelta al HTML
+                contexto = {
+                    'autores': autores,
+                    'datos_api': {
+                        'titulo': libro_api.get('title'),
+                        'descripcion': libro_api.get('notes', 'Sin descripción.'),
+                        'autor_nombre': libro_api.get('authors', [{}])[0].get('name', ''),
+                        'isbn': isbn
+                    }
+                }
+                # Devolvemos la misma página pero con los cuadros llenos
+                return render(request, 'gestion/templates/templates_crear/crear_libro.html', contexto)
+
+        # 2. Guardado final (cuando el usuario confirma los datos)
+        elif 'guardar_manual' in request.POST:
+            titulo = request.POST.get('titulo')
+            autor_id = request.POST.get('autor')
+            descripcion = request.POST.get('descripcion')
+            
+            autor = Autor.objects.get(id=autor_id)
+            Libro.objects.create(
+                titulo=titulo, 
+                autor=autor, 
+                descripcion=descripcion, # Recuerda añadir este campo al modelo
+                isbn=request.POST.get('isbn_final')
+            )
             return redirect('lista_libros')
+
     return render(request, 'gestion/templates/templates_crear/crear_libro.html', {'autores': autores})
 
 def lista_autores(request):
@@ -117,7 +152,7 @@ class LibroListView(LoginRequiredMixin, ListView):
     model = Libro
     template_name = 'gestion/templates/libro_view.html'
     context_object_name = 'libros'
-    paginate_by = 1
+    paginate_by = 10
 
 class LibroDetalleView(LoginRequiredMixin, DetailView):
     model = Libro

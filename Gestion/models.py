@@ -13,7 +13,9 @@ class Autor(models.Model):
         return f"{self.nombre} {self.apellido}"
 
 class Libro(models.Model):
-    titulo = models.CharField(max_length=50)
+    titulo = models.CharField(max_length=200)
+    isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)
+    descripcion = models.TextField(blank=True, null=True) 
     autor = models.ForeignKey(Autor, related_name="libros", on_delete=models.PROTECT)
     disponible = models.BooleanField(default=True)
     fecha_publicacion = models.DateField(blank=True, null=True)
