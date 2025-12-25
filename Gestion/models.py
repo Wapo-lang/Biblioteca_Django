@@ -1,6 +1,9 @@
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
+from datetime import timedelta
+import datetime
+from django.core.exceptions import ValidationError
 
 # Create your models here.
 class Autor(models.Model):
@@ -17,43 +20,100 @@ class Libro(models.Model):
     isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)
     descripcion = models.TextField(blank=True, null=True) 
     autor = models.ForeignKey(Autor, related_name="libros", on_delete=models.PROTECT)
+    
+    # LÓGICA ODOO: Stock
+    cantidad_total = models.PositiveIntegerField(default=1) # Odoo: 'value'
+    ejemplares_disponibles = models.IntegerField(default=1, editable=False)
     disponible = models.BooleanField(default=True)
-    fecha_publicacion = models.DateField(blank=True, null=True)
-    image = models.ImageField(upload_to='libros/', blank=True, null=True)
 
+    def save(self, *args, **kwargs):
+        # Al crear el libro, igualamos disponibles al total
+        if not self.pk:
+            self.ejemplares_disponibles = self.cantidad_total
+        super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.titulo} - {self.autor}"
+        return f"{self.titulo} ({self.ejemplares_disponibles}/{self.cantidad_total})"
     
+from decimal import Decimal # Importante para dinero
+
 class Prestamos(models.Model):
+    # ... tus campos actuales (libro, usuario, fechas) ...
     libro = models.ForeignKey(Libro, related_name="prestamos", on_delete=models.PROTECT)
     usuario = models.ForeignKey(settings.AUTH_USER_MODEL, related_name="prestamos", on_delete=models.PROTECT)
     fecha_prestamo = models.DateField(default=timezone.now)
-    fecha_max = models.DateField()
-    fecha_devolucion = models.DateField(null=True, blank=True) #permite registros nulos y en blanco
+    fecha_max = models.DateField(null=True, blank=True) 
+    fecha_devolucion = models.DateField(null=True, blank=True)
+
+    # Lógica Odoo: Tipos de multa y estados
+    ESTADOS = [('p', 'Prestado'), ('m', 'Multa'), ('d', 'Devuelto')]
+    TIPOS_MULTA = [
+        ('retraso', 'Retraso'),
+        ('perdida', 'Pérdida'),
+        ('danio', 'Daño'),
+        ('robo', 'Robo'),
+        ('otros', 'Otros')
+    ]
+
+    estado = models.CharField(max_length=1, choices=ESTADOS, default='p')
+    tipo_multa = models.CharField(max_length=10, choices=TIPOS_MULTA, default='retraso')
+    multa_fija = models.DecimalField(max_digits=6, decimal_places=2, default=0.00) # Odoo: multa
 
     class Meta:
         permissions = (
-            ("Ver_prestamos", "Puede ves prstamos"),
+            ("Ver_prestamos", "Puede ver préstamos"),
             ("Gestionar_prestamos", "Puede gestionar préstamos"),
-            
         )
-
-    def __str__(self):
-        return f"Préstamo de {self.libro} a {self.usuario}"
 
     @property
     def dias_retraso(self):
         hoy = timezone.now().date()
         fecha_ref = self.fecha_devolucion or hoy
-        if fecha_ref > self.fecha_max:
-            return (fecha_ref - self.fecha_devolucion).days
-        
+        if self.fecha_max and fecha_ref > self.fecha_max:
+            return (fecha_ref - self.fecha_max).days
+        return 0 
+
     @property
-    def multa_retraso(self):
-        tarifa_diaria = 0.50  # Tarifa fija por día de retraso
-        return self.dias_retraso * tarifa_diaria 
-    
+    def multa_total(self):
+        """
+        Lógica Odoo: Suma la multa por días de retraso + la multa fija 
+        (por ejemplo, si además de retraso el libro vino dañado)
+        """
+        tarifa_retraso = Decimal('0.50')
+        total_retraso = Decimal(self.dias_retraso) * tarifa_retraso
+        return total_retraso + Decimal(self.multa_fija)
+
+def save(self, *args, **kwargs):
+        # 1. TRATAMIENTO DE FECHAS (Evita el TypeError)
+        referencia = self.fecha_prestamo or timezone.now().date()
+        
+        # Si la fecha viene como texto del formulario, la convertimos a objeto date
+        if isinstance(referencia, str):
+            referencia = datetime.datetime.strptime(referencia, '%Y-%m-%d').date()
+            self.fecha_prestamo = referencia # Actualizamos el campo con el objeto real
+        
+        # Autocalcular fecha máxima (si no existe)
+        if not self.fecha_max:
+            self.fecha_max = referencia + timedelta(days=2)
+
+        # 2. CONTROL DE STOCK (Solo al crear el préstamo por primera vez)
+        if not self.pk: 
+            # Verificamos disponibilidad antes de guardar
+            if not self.libro.disponible:
+                raise ValidationError("Este libro no tiene ejemplares disponibles.")
+            
+            # Marcamos como prestado y guardamos el libro
+            self.libro.disponible = False
+            self.libro.save()
+            
+        # 3. LÓGICA DE ESTADO (Odoo Style)
+        # Calculamos si hay retraso antes de guardar para definir el estado
+        if self.fecha_max and not self.fecha_devolucion:
+            if timezone.now().date() > self.fecha_max:
+                self.estado = 'm' # 'm' de multa/mora
+
+        super().save(*args, **kwargs)
+        
 class Multa(models.Model):
     prestamo = models.ForeignKey(Prestamos, related_name="multas", on_delete=models.PROTECT)
     tipo_multa = models.CharField(max_length=50, choices=[('retraso', 'Retraso'), ('perdida', 'Pérdida del libro'), ('deterioro', 'Deterioro del libro')])

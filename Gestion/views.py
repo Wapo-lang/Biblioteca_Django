@@ -7,6 +7,7 @@ from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 import requests
+from django.contrib import messages
 
 from .models import Autor, Libro, Prestamos, Multa
 
@@ -18,50 +19,108 @@ def lista_libros(request):
     libros = Libro.objects.all()
     return render(request, 'gestion/templates/libros.html', {'libros': libros})
 
+def devolver_libro(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamos, id=prestamo_id)
+    
+    if prestamo.fecha_devolucion is None:
+        libro = prestamo.libro
+        # 1. Devolver stock (Igual que Odoo)
+        libro.disponible = True
+        libro.save()
+        
+        # 2. Registrar fecha
+        prestamo.fecha_devolucion = timezone.now().date()
+        
+        # 3. LÓGICA DE MULTA: Si hay retraso, el estado cambia a 'm' (multa)
+        # Esto usará la @property multa_retraso que definimos en el modelo
+        if prestamo.dias_retraso > 0:
+            prestamo.estado = 'm'
+            messages.warning(request, f"Devolución con retraso. Multa generada: ${prestamo.multa_retraso}")
+        else:
+            prestamo.estado = 'd'
+            messages.success(request, f"Libro '{libro.titulo}' devuelto con éxito.")
+            
+        prestamo.save()
+    
+    return redirect('lista_prestamos')
+
 def crear_libro(request):
     autores = Autor.objects.all()
-    
+    datos_api = {}
+
     if request.method == 'POST':
-        # Si el usuario llenó el campo ISBN y pulsó el botón
-        isbn = request.POST.get('isbn')
-        
-        if isbn and 'buscar_api' in request.POST:
-            # 1. Llamada a la API
+        # --- ACCIÓN: BUSCAR EN OPEN LIBRARY ---
+        if 'buscar_api' in request.POST:
+            isbn = request.POST.get('isbn')
             url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
-            data = requests.get(url).json()
-            key = f"ISBN:{isbn}"
+            
+            try:
+                response = requests.get(url)
+                data = response.json()
+                key = f"ISBN:{isbn}"
 
-            if key in data:
-                libro_api = data[key]
-                # Preparamos los datos para enviarlos de vuelta al HTML
-                contexto = {
-                    'autores': autores,
-                    'datos_api': {
-                        'titulo': libro_api.get('title'),
-                        'descripcion': libro_api.get('notes', 'Sin descripción.'),
-                        'autor_nombre': libro_api.get('authors', [{}])[0].get('name', ''),
-                        'isbn': isbn
+                if key in data:
+                    libro_info = data[key]
+                    autores_api = libro_info.get('authors', [])
+                    
+                    autor_id_final = None
+                    
+                    if autores_api:
+                        nombre_completo = autores_api[0].get('name')
+                        # Dividir nombre y apellido (Ej: "George Orwell" -> ["George", "Orwell"])
+                        partes = nombre_completo.split(' ', 1)
+                        nom = partes[0]
+                        ape = partes[1] if len(partes) > 1 else " "
+
+                        # MÁGIA AQUÍ: Si no existe, lo crea automáticamente
+                        autor_obj, creado = Autor.objects.get_or_create(
+                            nombre=nom, 
+                            apellido=ape
+                        )
+                        autor_id_final = autor_obj.id
+                        
+                        if creado:
+                            messages.info(request, f"Se ha registrado un nuevo autor: {nombre_completo}")
+
+                    datos_api = {
+                        'titulo': libro_info.get('title'),
+                        'descripcion': libro_info.get('notes') or libro_info.get('description') or "Sin sinopsis.",
+                        'isbn': isbn,
+                        'autor_id': autor_id_final # Este ID se usará en el select del HTML
                     }
-                }
-                # Devolvemos la misma página pero con los cuadros llenos
-                return render(request, 'gestion/templates/templates_crear/crear_libro.html', contexto)
+                else:
+                    messages.error(request, "El ISBN no devolvió resultados.")
+            except Exception as e:
+                messages.error(request, f"Error de conexión: {e}")
 
-        # 2. Guardado final (cuando el usuario confirma los datos)
+        # --- ACCIÓN: GUARDAR LIBRO DEFINITIVAMENTE ---
         elif 'guardar_manual' in request.POST:
             titulo = request.POST.get('titulo')
             autor_id = request.POST.get('autor')
+            isbn_final = request.POST.get('isbn_final')
             descripcion = request.POST.get('descripcion')
-            
-            autor = Autor.objects.get(id=autor_id)
-            Libro.objects.create(
-                titulo=titulo, 
-                autor=autor, 
-                descripcion=descripcion, # Recuerda añadir este campo al modelo
-                isbn=request.POST.get('isbn_final')
-            )
-            return redirect('lista_libros')
+            cantidad = request.POST.get('cantidad', 1) # Añade un input de cantidad en tu HTML
 
-    return render(request, 'gestion/templates/templates_crear/crear_libro.html', {'autores': autores})
+            if titulo and autor_id:
+                autor = Autor.objects.get(id=autor_id)
+                Libro.objects.create(
+                    titulo=titulo,
+                    autor=autor,
+                    isbn=isbn_final,
+                    descripcion=descripcion,
+                    cantidad_total=cantidad, # Nuevo campo de Odoo
+                    disponible=True
+                )
+                messages.success(request, "¡Libro guardado exitosamente!")
+                return redirect('lista_libros')
+
+    # Actualizamos la lista de autores por si se creó uno nuevo en este request
+    autores = Autor.objects.all()
+    
+    return render(request, 'gestion/templates/templates_crear/crear_libro.html', {
+        'autores': autores,
+        'datos_api': datos_api
+    })
 
 def lista_autores(request):
     autores = Autor.objects.all()
@@ -102,26 +161,47 @@ def lista_prestamos(request):
     return render(request, 'gestion/templates/prestamos.html', {'prestamos': prestamos})
 
 def crear_prestamo(request):
-    if not request.user.has_perm('Gestion.Gestionar_prestamos'):
-        return HttpResponseForbidden("No tienes permiso para gestionar préstamos.")
+    # 1. Verificación de permisos
+    if not request.user.has_perm('gestion.Gestionar_prestamos'):
+        return HttpResponseForbidden("No tienes permiso para realizar esta acción.")
     
-    libro = Libro.objects.filter(disponible=True)
+    # 2. Datos para los selectores del formulario
+    libros_disponibles = Libro.objects.filter(disponible=True)
     usuarios = User.objects.all()
-    if request.method == 'POST':
-        libro_id = request.method.POST.get('libro')
-        usuario_id = request.method.POST.get('usuario')
-        fecha_prestamo = request.method.POST.get('fecha_prestamo')
-        if libro_id and usuario_id and fecha_prestamo:
-            libro = get_object_or_404(Libro, id=libro_id)
-            usuario = get_object_or_404(User, id=usuario_id)
-            prestamo = Prestamos.objects.create(libro=libro, usuario=usuario, fecha_prestamo=fecha_prestamo)
-            libro.disponible = False
-            libro.save()
-            return redirect('detalle_prestamo', id=prestamo.id)
-    fecha = (timezone.now()).date().isoformat()
-    return render(request, 'gestion/templates/templates_crear/crear_prestamo.html', {'libros': libro, 'usuarios': usuarios, 'fecha': fecha} )
-        
 
+    if request.method == 'POST':
+        libro_id = request.POST.get('libro')
+        usuario_id = request.POST.get('usuario')
+        fecha_p = request.POST.get('fecha_prestamo')
+
+        if libro_id and usuario_id:
+            libro_obj = get_object_or_404(Libro, id=libro_id)
+            usuario_obj = get_object_or_404(User, id=usuario_id)
+            
+            try:
+                # IMPORTANTE: Asegúrate de que el modelo se llame Prestamo
+                Prestamos.objects.create(
+                    libro=libro_obj, 
+                    usuario=usuario_obj, 
+                    fecha_prestamo=fecha_p or timezone.now().date()
+                )
+                
+                messages.success(request, f"¡Préstamo de '{libro_obj.titulo}' registrado con éxito!")
+                return redirect('lista_prestamos')
+                
+            except Exception as e:
+                # Captura errores de validación del modelo (como stock agotado)
+                messages.error(request, f"Error al procesar: {str(e)}")
+
+    # 3. Fecha de hoy para el input date del HTML
+    fecha_hoy = timezone.now().date().isoformat()
+    
+    # Revisa que la ruta del template sea correcta según tu estructura
+    return render(request, 'templates_crear/crear_prestamo.html', {
+        'libros': libros_disponibles, 
+        'usuarios': usuarios, 
+        'fecha': fecha_hoy
+    })
 def detalle_prestamo(request):
     pass
 
@@ -129,8 +209,45 @@ def lista_multa(request):
     multas = Multa.objects.all()
     return render(request, 'gestion/templates/multas.html', {'multas': multas})
 
-def crear_multa(request):
-    pass
+def crear_multa(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamos, id=prestamo_id)
+    
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo_multa') # Viene del select del HTML
+        
+        # 1. Definimos montos según tus opciones del modelo
+        # Ajustados para que no excedan los 3 dígitos (max 9.99 si max_digits=3)
+        montos = {
+            'retraso': 1.00,
+            'deterioro': 5.00,
+            'perdida': 9.00, # Cuidado: tu max_digits=3 solo permite hasta 9.99
+        }
+        monto_sancion = montos.get(tipo, 2.00)
+
+        # 2. Crear la multa con los nombres de campos REALES de tu modelo
+        Multa.objects.create(
+            prestamo=prestamo,
+            tipo_multa=tipo,      # Campo correcto
+            monto=monto_sancion,   # Campo correcto
+            fecha=timezone.now()   # Campo correcto (en lugar de fecha_emision)
+        )
+
+        # 3. Lógica de Stock y Devolución
+        if tipo == 'perdida':
+            prestamo.libro.cantidad_total -= 1
+            prestamo.libro.save()
+        else:
+            prestamo.libro.disponible = True
+            prestamo.libro.save()
+
+        # 4. Finalizar préstamo
+        prestamo.fecha_devolucion = timezone.now().date()
+        prestamo.save()
+
+        messages.success(request, "Multa registrada y libro devuelto.")
+        return redirect('lista_multas')
+
+    return render(request, 'templates_crear/crear_multa.html', {'prestamo': prestamo})
 
 def registro(request):
     if request.method == 'POST':

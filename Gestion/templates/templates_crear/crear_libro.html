@@ -112,13 +112,19 @@
             <div class="mb-3">
                 <label class="form-label">Autor:</label>
                 <select name="autor" class="form-select">
+                    <option value="">-- Seleccione un autor --</option>
                     {% for autor in autores %}
-                        <option value="{{ autor.id }}" {% if datos_api.autor_nombre in autor.nombre %}selected{% endif %}>
+                        <option value="{{ autor.id }}" {% if datos_api.autor_id == autor.id %}selected{% endif %}>
                             {{ autor.nombre }} {{ autor.apellido }}
                         </option>
                     {% endfor %}
                 </select>
             </div>
+            <div class="mb-3">
+                <label class="form-label">Cantidad de Ejemplares:</label>
+                <input type="number" name="cantidad" class="form-control" value="1" min="1">
+                <small class="text-muted">Indique cuántos libros físicos está ingresando al sistema.</small>
+            </div>            
 
             <input type="hidden" name="isbn_final" value="{{ datos_api.isbn }}">
             <button type="submit" name="guardar_manual" class="btn btn-library w-100">Guardar Libro 📚</button>

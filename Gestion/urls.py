@@ -32,6 +32,8 @@ urlpatterns = [
     path('prestamos/nuevo', crear_prestamo, name='crear_prestamo'),
     path('pretamos/<int:id>', detalle_prestamo, name='detalle_prestamo'),
 
+    path('prestamos/devolver/<int:prestamo_id>/', devolver_libro, name='devolver_libro'),
+
     #multas
     path('multas/', lista_multa, name='lista_multas'),
     path('multas/nuevo/<int:prestamo_id>', crear_multa, name='crear_multa'),

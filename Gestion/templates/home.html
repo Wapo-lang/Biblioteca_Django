@@ -131,7 +131,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Registrar Préstamo</h5>
                         <p class="card-text">Controla la salida de libros.</p>
-                        <a href="#" class="btn btn-primary w-100">Registrar</a>
+                        <a href="{% url 'crear_prestamo' %}" class="btn btn-primary w-100">Registrar</a>
                     </div>
                 </div>
             </div>
@@ -141,7 +141,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Historial de Préstamos</h5>
                         <p class="card-text">Consulta los préstamos realizados.</p>
-                        <a href="#" class="btn btn-secondary w-100">Ver Historial</a>
+                        <a href="{% url 'lista_prestamos' %}" class="btn btn-secondary w-100">Ver Historial</a>
                     </div>
                 </div>
             </div>
@@ -168,7 +168,7 @@
                     <div class="card-body">
                         <h5 class="card-title">Lista de Multas</h5>
                         <p class="card-text">Consulta multas activas.</p>
-                        <a href="#" class="btn btn-secondary w-100">Ver Lista</a>
+                        <a href="{% url 'lista_multas' %}" class="btn btn-secondary w-100">Ver Lista</a>
                     </div>
                 </div>
             </div>

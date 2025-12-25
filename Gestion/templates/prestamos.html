@@ -1,39 +1,98 @@
 {% extends "index.html" %}
-
 {% block contenido %}
-<h2> PRÉSTAMOS </h2>
 
-<table style="border: 1px solid; border-collapse: collapse; width: 100%;">
-    <tr style="border: 1px solid">
-        <td style="border: 1px solid; padding: 5px;">Usuario</td>
-        <td style="border: 1px solid; padding: 5px;">Libro</td>
-        <td style="border: 1px solid; padding: 5px;">Fecha de Préstamo</td>
-        <td style="border: 1px solid; padding: 5px;">Fecha de Devolución</td>
-        <td style="border: 1px solid; padding: 5px;">Estado</td>
-    </tr>
+<style>
+    .library-title {
+        color: #5a3825;
+        font-weight: bold;
+        text-shadow: 1px 1px #d6c1a5;
+    }
 
-    {% for prestamo in prestamos %}
-    <tr style="border: 1px solid">
-        <td style="border: 1px solid; padding: 5px;">
-            {{ prestamo.usuario }}
-        </td>
+    .library-card {
+        background: #fff9f1;
+        border: 2px solid #d4b894;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(80, 55, 35, 0.25);
+        padding: 20px;
+        position: relative;
+    }
 
-        <td style="border: 1px solid; padding: 5px;">
-            {{ prestamo.libro }}
-        </td>
+    .library-card::before {
+        content: "";
+        width: 100%;
+        height: 12px;
+        position: absolute;
+        top: 0;
+        left: 0;
+        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
+    }
 
-        <td style="border: 1px solid; padding: 5px;">
-            {{ prestamo.fecha_prestamo }}
-        </td>
+    .table {
+        color: #4a372a;
+    }
 
-        <td style="border: 1px solid; padding: 5px;">
-            {{ prestamo.fecha_devolucion }}
-        </td>
+    .btn-library {
+        background-color: #8b5e34;
+        border: none;
+        color: #fff;
+        font-weight: bold;
+    }
 
-        <td style="border: 1px solid; padding: 5px;">
-            {{ prestamo.estado }}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    .btn-library:hover {
+        background-color: #6d4828;
+        color: #fff;
+    }
+</style>
+
+<div class="container mt-4">
+    <h2 class="text-center mb-4 library-title">📋 Gestión de Préstamos</h2>
+
+    <div class="library-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead style="border-bottom: 2px solid #8b5e34;">
+                    <tr>
+                        <th>Lector</th>
+                        <th>Obra</th>
+                        <th>Vencimiento</th>
+                        <th>Estado / Sanción</th>
+                        <th class="text-center">Acción</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for prestamo in prestamos %}
+                    <tr class="{% if prestamo.dias_retraso > 0 and not prestamo.fecha_devolucion %}table-danger{% endif %}">
+                        <td><strong>{{ prestamo.usuario.username }}</strong></td>
+                        <td>{{ prestamo.libro.titulo }}</td>
+                        <td>{{ prestamo.fecha_max }}</td>
+                        <td>
+                            {% if prestamo.fecha_devolucion %}
+                                <span class="badge bg-secondary">Devuelto</span>
+                            {% elif prestamo.dias_retraso > 0 %}
+                                <span class="badge bg-danger">Deuda: ${{ prestamo.multa_total }}</span>
+                            {% else %}
+                                <span class="badge bg-success">En tiempo</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            {% if not prestamo.fecha_devolucion %}
+                                <a href="{% url 'devolver_libro' prestamo.id %}" class="btn btn-sm btn-library">
+                                    📩 Devolver
+                                </a>
+                            {% else %}
+                                <span class="text-muted small">Finalizado</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No hay registros de préstamos actualmente.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

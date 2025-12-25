@@ -1,0 +1,103 @@
+{% extends "index.html" %}
+{% block contenido %}
+
+<style>
+    .library-title {
+        color: #5a3825;
+        font-weight: bold;
+        text-shadow: 1px 1px #d6c1a5;
+    }
+
+    .library-card {
+        background: #fff9f1;
+        border: 2px solid #d4b894;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(80, 55, 35, 0.25);
+        padding: 25px;
+        position: relative;
+    }
+
+    .library-card::before {
+        content: "";
+        width: 100%;
+        height: 12px;
+        position: absolute;
+        top: 0; left: 0;
+        border-radius: 12px 12px 0 0;
+        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
+    }
+
+    .info-label {
+        color: #8b5e34;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+
+    .btn-library-save {
+        background-color: #8b5e34;
+        color: white;
+        border: none;
+        transition: 0.3s;
+    }
+
+    .btn-library-save:hover {
+        background-color: #5c422e;
+        color: #f8f9fa;
+    }
+</style>
+
+<div class="container mt-4">
+    <div class="mb-4">
+        <h2 class="library-title">⚖️ Registrar Devolución e Incidencia</h2>
+        <p class="text-muted">Procesando el préstamo de: <strong>{{ prestamo.usuario.username }}</strong></p>
+    </div>
+
+    <div class="library-card">
+        <div class="row mb-4 border-bottom pb-3">
+            <div class="col-md-6">
+                <span class="info-label">Obra en devolución:</span>
+                <h4 style="color: #5c422e;">{{ prestamo.libro.titulo }}</h4>
+            </div>
+            <div class="col-md-3">
+                <span class="info-label">Fecha Límite:</span>
+                <p>{{ prestamo.fecha_max }}</p>
+            </div>
+            <div class="col-md-3">
+                <span class="info-label">ID Préstamo:</span>
+                <p>#{{ prestamo.id }}</p>
+            </div>
+        </div>
+
+        <form method="POST">
+            {% csrf_token %}
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold" style="color: #5c422e;">Tipo de Incidencia</label>
+                    <select name="tipo_multa" class="form-select">
+                        <option value="retraso">Retraso</option>
+                        <option value="deterioro">Deterioro del libro</option>
+                        <option value="perdida">Pérdida del libro</option>
+                    </select>
+                    <small class="text-muted">Se sumará automáticamente a la multa por días de retraso.</small>
+                </div>
+
+                <div class="col-md-6 mb-3">
+                    <label class="form-label fw-bold" style="color: #5c422e;">Observaciones</label>
+                    <textarea name="descripcion" class="form-control" rows="2" placeholder="Describa el estado del libro..."></textarea>
+                </div>
+            </div>
+
+            <hr>
+
+            <div class="d-flex justify-content-end gap-2">
+                <a href="{% url 'lista_prestamos' %}" class="btn btn-outline-secondary">Cancelar</a>
+                <button type="submit" class="btn btn-library-save px-4">
+                    Confirmar Devolución
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% endblock %}
