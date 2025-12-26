@@ -1,34 +1,66 @@
 {% extends "index.html" %}
-
 {% block contenido %}
-<h2> MULTAS </h2>
+<div class="container mt-4">
+    <h2 class="library-title">💰 Gestión de Multas</h2>
 
-<table style="border: 1px solid; border-collapse: collapse; width: 100%;">
-    <tr style="border: 1px solid">
-        <td style="border: 1px solid; padding: 5px;">Usuario</td>
-        <td style="border: 1px solid; padding: 5px;">Libro</td>
-        <td style="border: 1px solid; padding: 5px;">Monto</td>
-        <td style="border: 1px solid; padding: 5px;">Fecha</td>
-    </tr>
+    {% if pendientes %}
+    <div class="alert alert-warning border-warning">
+        <h5>⚠️ Préstamos con Retraso Detectados</h5>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Libro</th>
+                    <th>Usuario</th>
+                    <th>Días de retraso</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in pendientes %}
+                <tr>
+                    <td>{{ p.libro.titulo }}</td>
+                    <td>{{ p.usuario.username }}</td>
+                    <td><span class="badge bg-danger">{{ p.dias_retraso }} días</span></td>
+                    <td>
+                        <a href="{% url 'crear_multa' p.id %}" class="btn btn-sm btn-dark">Procesar Multa</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
 
-    {% for multa in multas %}
-    <tr style="border: 1px solid">
-        <td style="border: 1px solid; padding: 5px;">
-            {{ multa.usuario }}
-        </td>
-
-        <td style="border: 1px solid; padding: 5px;">
-            {{ multa.libro }}
-        </td>
-
-        <td style="border: 1px solid; padding: 5px;">
-            ${{ multa.monto }}
-        </td>
-
-        <td style="border: 1px solid; padding: 5px;">
-            {{ multa.fecha }}
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    <div class="library-card mt-4">
+        <h4>Historial de Sanciones</h4>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Socio</th>
+                    <th>Motivo</th>
+                    <th>Monto</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for multa in multas %}
+                <tr>
+                    <td>{{ multa.fecha }}</td>
+                    <td>{{ multa.prestamo.usuario.username }}</td>
+                    <td>{{ multa.get_tipo_multa_display }}</td>
+                    <td>${{ multa.monto }}</td>
+                    <td>
+                        {% if multa.pagada %}
+                            <span class="badge bg-success">Pagada</span>
+                        {% else %}
+                            <span class="badge bg-outline-danger">Pendiente</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

@@ -49,44 +49,37 @@
 
     <div class="library-card">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead style="border-bottom: 2px solid #8b5e34;">
+            <table class="table">
+                <thead>
                     <tr>
-                        <th>Lector</th>
-                        <th>Obra</th>
-                        <th>Vencimiento</th>
-                        <th>Estado / Sanción</th>
-                        <th class="text-center">Acción</th>
+                        <th>Libro</th>
+                        {% if user.is_staff %}
+                            <th>Socio/Usuario</th>
+                        {% endif %}
+                        <th>Estado</th>
+                        <th>Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for prestamo in prestamos %}
-                    <tr class="{% if prestamo.dias_retraso > 0 and not prestamo.fecha_devolucion %}table-danger{% endif %}">
-                        <td><strong>{{ prestamo.usuario.username }}</strong></td>
-                        <td>{{ prestamo.libro.titulo }}</td>
-                        <td>{{ prestamo.fecha_max }}</td>
-                        <td>
-                            {% if prestamo.fecha_devolucion %}
-                                <span class="badge bg-secondary">Devuelto</span>
-                            {% elif prestamo.dias_retraso > 0 %}
-                                <span class="badge bg-danger">Deuda: ${{ prestamo.multa_total }}</span>
-                            {% else %}
-                                <span class="badge bg-success">En tiempo</span>
-                            {% endif %}
-                        </td>
-                        <td class="text-center">
-                            {% if not prestamo.fecha_devolucion %}
-                                <a href="{% url 'devolver_libro' prestamo.id %}" class="btn btn-sm btn-library">
-                                    📩 Devolver
-                                </a>
-                            {% else %}
-                                <span class="text-muted small">Finalizado</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% empty %}
                     <tr>
-                        <td colspan="5" class="text-center">No hay registros de préstamos actualmente.</td>
+                        <td>{{ prestamo.libro.titulo }}</td>
+                        {% if user.is_staff %}
+                            <td>{{ prestamo.usuario.username }}</td>
+                        {% endif %}
+                        <td>
+                            {{ prestamo.get_estado_display }}
+                        </td>
+                        <td>
+                            {% if not prestamo.fecha_devolucion %}
+                                <a href="{% url 'devolver_libro' prestamo.id %}" class="btn btn-warning btn-sm">Devolver</a>
+                            {% endif %}
+                            
+                            {# Solo el Admin puede gestionar multas #}
+                            {% if user.is_staff and prestamo.estado == 'm' %}
+                                <a href="{% url 'crear_multa' prestamo.id %}" class="btn btn-danger btn-sm">Sancionar</a>
+                            {% endif %}
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

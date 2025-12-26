@@ -82,37 +82,37 @@ class Prestamos(models.Model):
         tarifa_retraso = Decimal('0.50')
         total_retraso = Decimal(self.dias_retraso) * tarifa_retraso
         return total_retraso + Decimal(self.multa_fija)
+    @property
+    def estado_real(self):
+        if self.fecha_devolucion:
+            return "Devuelto"
+        if self.fecha_max and timezone.now().date() > self.fecha_max:
+            return "En Mora / Multa"
+        return "A tiempo"
 
-def save(self, *args, **kwargs):
-        # 1. TRATAMIENTO DE FECHAS (Evita el TypeError)
-        referencia = self.fecha_prestamo or timezone.now().date()
-        
-        # Si la fecha viene como texto del formulario, la convertimos a objeto date
-        if isinstance(referencia, str):
-            referencia = datetime.datetime.strptime(referencia, '%Y-%m-%d').date()
-            self.fecha_prestamo = referencia # Actualizamos el campo con el objeto real
-        
-        # Autocalcular fecha máxima (si no existe)
-        if not self.fecha_max:
-            self.fecha_max = referencia + timedelta(days=2)
-
-        # 2. CONTROL DE STOCK (Solo al crear el préstamo por primera vez)
-        if not self.pk: 
-            # Verificamos disponibilidad antes de guardar
-            if not self.libro.disponible:
-                raise ValidationError("Este libro no tiene ejemplares disponibles.")
+    def save(self, *args, **kwargs):
+            referencia = self.fecha_prestamo or timezone.now().date()
             
-            # Marcamos como prestado y guardamos el libro
-            self.libro.disponible = False
-            self.libro.save()
+            if isinstance(referencia, str):
+                referencia = datetime.datetime.strptime(referencia, '%Y-%m-%d').date()
+                self.fecha_prestamo = referencia # Actualizamos el campo con el objeto real
             
-        # 3. LÓGICA DE ESTADO (Odoo Style)
-        # Calculamos si hay retraso antes de guardar para definir el estado
-        if self.fecha_max and not self.fecha_devolucion:
-            if timezone.now().date() > self.fecha_max:
-                self.estado = 'm' # 'm' de multa/mora
+            # Autocalcular fecha máxima (si no existe)
+            if not self.fecha_max:
+                self.fecha_max = referencia + timedelta(days=2)
 
-        super().save(*args, **kwargs)
+            if not self.pk: 
+                if not self.libro.disponible:
+                    raise ValidationError("Este libro no tiene ejemplares disponibles.")
+
+                self.libro.disponible = False
+                self.libro.save()
+                
+            if self.fecha_max and not self.fecha_devolucion:
+                if timezone.now().date() > self.fecha_max:
+                    self.estado = 'm' # 'm' de multa/mora
+
+            super().save(*args, **kwargs)
         
 class Multa(models.Model):
     prestamo = models.ForeignKey(Prestamos, related_name="multas", on_delete=models.PROTECT)

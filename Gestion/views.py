@@ -1,6 +1,6 @@
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required,user_passes_test
 from django.contrib.auth.models import User
 from django.utils import timezone
 from django.conf import settings
@@ -8,42 +8,52 @@ from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 import requests
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 
 from .models import Autor, Libro, Prestamos, Multa
+
+def es_admin(user):
+    return user.is_staff
 
 def index(request):
     title = settings.TITLE
     return render(request, 'gestion/templates/home.html', {'titulo': title})
 
+@login_required
 def lista_libros(request):
     libros = Libro.objects.all()
     return render(request, 'gestion/templates/libros.html', {'libros': libros})
 
+@login_required
 def devolver_libro(request, prestamo_id):
     prestamo = get_object_or_404(Prestamos, id=prestamo_id)
     
+    # RESTRICCIÓN DE SEGURIDAD:
+    # Si el usuario NO es admin y el préstamo NO le pertenece, denegar acceso.
+    if not request.user.is_staff and prestamo.usuario != request.user:
+        messages.error(request, "No tienes permiso para devolver un libro ajeno.")
+        return redirect('lista_prestamos')
+    
     if prestamo.fecha_devolucion is None:
         libro = prestamo.libro
-        # 1. Devolver stock (Igual que Odoo)
         libro.disponible = True
         libro.save()
         
-        # 2. Registrar fecha
         prestamo.fecha_devolucion = timezone.now().date()
         
-        # 3. LÓGICA DE MULTA: Si hay retraso, el estado cambia a 'm' (multa)
-        # Esto usará la @property multa_retraso que definimos en el modelo
+        # Lógica de estado según retraso
         if prestamo.dias_retraso > 0:
-            prestamo.estado = 'm'
-            messages.warning(request, f"Devolución con retraso. Multa generada: ${prestamo.multa_retraso}")
+            prestamo.estado = 'm'  # Estado multa para que el Admin lo vea en su panel
+            messages.warning(request, f"Devolución con retraso registrada.")
         else:
-            prestamo.estado = 'd'
+            prestamo.estado = 'd'  # Estado devuelto normal
             messages.success(request, f"Libro '{libro.titulo}' devuelto con éxito.")
             
         prestamo.save()
     
     return redirect('lista_prestamos')
 
+@user_passes_test(es_admin)
 def crear_libro(request):
     autores = Autor.objects.all()
     datos_api = {}
@@ -155,9 +165,15 @@ def crear_autor(request, id = None):
     }
     return render(request, 'gestion/templates/templates_crear/crear_autor.html', context)
 
-
+@login_required
 def lista_prestamos(request):
-    prestamos = Prestamos.objects.all()
+    # Si el usuario es parte del staff (Admin), ve todos los préstamos
+    if request.user.is_staff:
+        prestamos = Prestamos.objects.all()
+    else:
+        # Si es un usuario normal, filtramos solo los que le pertenecen
+        prestamos = Prestamos.objects.filter(usuario=request.user)
+        
     return render(request, 'gestion/templates/prestamos.html', {'prestamos': prestamos})
 
 def crear_prestamo(request):
@@ -205,9 +221,14 @@ def crear_prestamo(request):
 def detalle_prestamo(request):
     pass
 
+@user_passes_test(es_admin)
 def lista_multa(request):
-    multas = Multa.objects.all()
-    return render(request, 'gestion/templates/multas.html', {'multas': multas})
+    multas_registradas = Multa.objects.all()
+    prestamos_vencidos = Prestamos.objects.filter(estado='m', multas__isnull=True)
+    return render(request, 'multas.html', {
+        'multas': multas_registradas,
+        'pendientes': prestamos_vencidos
+    })
 
 def crear_multa(request, prestamo_id):
     prestamo = get_object_or_404(Prestamos, id=prestamo_id)
