@@ -221,52 +221,72 @@ def crear_prestamo(request):
 def detalle_prestamo(request):
     pass
 
-@user_passes_test(es_admin)
+@login_required
 def lista_multa(request):
-    multas_registradas = Multa.objects.all()
-    prestamos_vencidos = Prestamos.objects.filter(estado='m', multas__isnull=True)
-    return render(request, 'multas.html', {
+    if request.user.is_staff:
+        # El Admin ve todas las multas y los préstamos pendientes de sanción
+        multas_registradas = Multa.objects.all()
+        prestamos_vencidos = Prestamos.objects.filter(estado='m', multas__isnull=True)
+    else:
+        # El Usuario normal solo ve SUS multas ya procesadas
+        multas_registradas = Multa.objects.filter(prestamo__usuario=request.user)
+        # Los usuarios no deberían ver "pendientes" de procesamiento administrativo
+        prestamos_vencidos = [] 
+    
+    return render(request, 'gestion/templates/multas.html', {
         'multas': multas_registradas,
         'pendientes': prestamos_vencidos
     })
 
+@user_passes_test(lambda u: u.is_staff)
+def pagar_multa(request, multa_id):
+    multa = get_object_or_404(Multa, id=multa_id)
+    multa.pagada = True
+    multa.save()
+    messages.success(request, f"La multa de {multa.prestamo.usuario.username} ha sido marcada como pagada.")
+    return redirect('lista_multas')
+
+@login_required
+@user_passes_test(es_admin)
 def crear_multa(request, prestamo_id):
     prestamo = get_object_or_404(Prestamos, id=prestamo_id)
     
     if request.method == 'POST':
-        tipo = request.POST.get('tipo_multa') # Viene del select del HTML
+        tipo = request.POST.get('tipo_multa')
         
-        # 1. Definimos montos según tus opciones del modelo
-        # Ajustados para que no excedan los 3 dígitos (max 9.99 si max_digits=3)
         montos = {
             'retraso': 1.00,
             'deterioro': 5.00,
-            'perdida': 9.00, # Cuidado: tu max_digits=3 solo permite hasta 9.99
+            'perdida': 9.00, 
         }
         monto_sancion = montos.get(tipo, 2.00)
 
-        # 2. Crear la multa con los nombres de campos REALES de tu modelo
+        # Crear la multa
         Multa.objects.create(
             prestamo=prestamo,
-            tipo_multa=tipo,      # Campo correcto
-            monto=monto_sancion,   # Campo correcto
-            fecha=timezone.now()   # Campo correcto (en lugar de fecha_emision)
+            tipo_multa=tipo,
+            monto=monto_sancion,
+            fecha=timezone.now()
         )
 
-        # 3. Lógica de Stock y Devolución
+        # Lógica de Stock
         if tipo == 'perdida':
             prestamo.libro.cantidad_total -= 1
+            # Si ya no quedan libros, asegurar disponible=False
+            if prestamo.libro.cantidad_total <= 0:
+                prestamo.libro.disponible = False
             prestamo.libro.save()
         else:
             prestamo.libro.disponible = True
             prestamo.libro.save()
 
-        # 4. Finalizar préstamo
+        # Finalizar préstamo y cambiar estado a 'd' (devuelto) o lo que uses
         prestamo.fecha_devolucion = timezone.now().date()
+        prestamo.estado = 'd' 
         prestamo.save()
 
         messages.success(request, "Multa registrada y libro devuelto.")
-        return redirect('lista_multas')
+        return redirect('lista_multas') # Asegúrate que este nombre coincida con tus URLs
 
     return render(request, 'templates_crear/crear_multa.html', {'prestamo': prestamo})
 
@@ -288,31 +308,31 @@ from django.urls import reverse_lazy
 
 class LibroListView(LoginRequiredMixin, ListView):
     model = Libro
-    template_name = 'gestion/templates/libro_view.html'
+    template_name = 'Gestion/templates/libro_view.html'
     context_object_name = 'libros'
     paginate_by = 10
 
 class LibroDetalleView(LoginRequiredMixin, DetailView):
     model = Libro
-    template_name = 'gestion/templates/detalle_libro.html'
+    template_name = 'Gestion/templates/detalle_libro.html'
     context_object_name = 'libro'
 
 class LibroCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Libro
     fields = ['titulo', 'autor', 'disponible']
-    template_name = 'gestion/templates/templates_crear/crear_libro.html'
+    template_name = 'Gestion/templates/templates_crear/crear_libro.html'
     success_url = reverse_lazy('libro_list')
     permission_required = 'Gestion.add_libro'
 
 class LibroUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Libro
     fields = ['titulo', 'autor']
-    template_name = 'gestion/templates/editar_libro.html'
+    template_name = 'Gestion/templates/editar_libro.html'
     success_url = reverse_lazy('libro_list')
     permission_required = 'Gestion.change_libro'
 
 class LibroDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Libro
-    template_name = 'gestion/templates/eliminar_libro.html'
+    template_name = 'Gestion/templates/eliminar_libro.html'
     success_url = reverse_lazy('libro_list')
     permission_required = 'Gestion.delete_libro'

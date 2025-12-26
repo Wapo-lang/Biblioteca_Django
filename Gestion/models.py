@@ -20,9 +20,8 @@ class Libro(models.Model):
     isbn = models.CharField(max_length=13, unique=True, null=True, blank=True)
     descripcion = models.TextField(blank=True, null=True) 
     autor = models.ForeignKey(Autor, related_name="libros", on_delete=models.PROTECT)
-    
-    # LÓGICA ODOO: Stock
-    cantidad_total = models.PositiveIntegerField(default=1) # Odoo: 'value'
+
+    cantidad_total = models.PositiveIntegerField(default=1) 
     ejemplares_disponibles = models.IntegerField(default=1, editable=False)
     disponible = models.BooleanField(default=True)
 
@@ -45,7 +44,6 @@ class Prestamos(models.Model):
     fecha_max = models.DateField(null=True, blank=True) 
     fecha_devolucion = models.DateField(null=True, blank=True)
 
-    # Lógica Odoo: Tipos de multa y estados
     ESTADOS = [('p', 'Prestado'), ('m', 'Multa'), ('d', 'Devuelto')]
     TIPOS_MULTA = [
         ('retraso', 'Retraso'),
@@ -110,7 +108,7 @@ class Prestamos(models.Model):
                 
             if self.fecha_max and not self.fecha_devolucion:
                 if timezone.now().date() > self.fecha_max:
-                    self.estado = 'm' # 'm' de multa/mora
+                    self.estado = 'm' # En mora
 
             super().save(*args, **kwargs)
         

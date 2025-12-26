@@ -38,4 +38,6 @@ urlpatterns = [
     path('multas/', lista_multa, name='lista_multas'),
     path('multas/nuevo/<int:prestamo_id>', crear_multa, name='crear_multa'),
 
+    path('multas/pagar/<int:multa_id>/', pagar_multa, name='pagar_multa'),
+
 ]
