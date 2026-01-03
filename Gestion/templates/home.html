@@ -1,0 +1,170 @@
+{% extends 'index.html' %}
+{% block contenido %}
+
+<style>
+    /* Estilo del título de sección */
+    .titulo-seccion {
+        font-size: 32px;
+        font-weight: 800;
+        color: #5a3c22;
+        text-align: center;
+        letter-spacing: 1px;
+        margin-bottom: 25px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    /* Tarjetas estilo biblioteca */
+    .card-custom {
+        background: #fffdf7;
+        border: 2px solid #c9a77c;
+        border-radius: 15px;
+        box-shadow: 0 5px 18px rgba(0,0,0,0.15);
+        transition: 0.25s ease;
+        padding: 10px;
+        color: #4a3a28;
+    }
+
+    .card-custom:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 10px 28px rgba(0,0,0,0.25);
+        border-color: #b08968;
+    }
+
+    .card-title {
+        color: #7a5230;
+        font-weight: bold;
+        font-size: 22px;
+    }
+
+    .card-text {
+        color: #4f4435;
+    }
+
+    /* Botones estilo cálido */
+    .btn-primary {
+        background: #7a5230;
+        border: none;
+        color: #f8e8c8 !important;
+        font-weight: bold;
+    }
+
+    .btn-primary:hover {
+        background: #5a3c22;
+        color: #fff3d1 !important;
+    }
+
+    .btn-secondary {
+        background: #b08968;
+        border: none;
+        font-weight: bold;
+        color: #fff;
+    }
+
+    .btn-secondary:hover {
+        background: #8f6d4c;
+    }
+</style>
+
+<div class="container py-5">
+
+    <!-- Sección Libros -->
+    <section id="libros" class="mb-5">
+        <h2 class="titulo-seccion">📘 LIBROS</h2>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card card-custom">
+                    <div class="card-body">
+                        <h5 class="card-title">Agregar Libro</h5>
+                        <p class="card-text">Registra nuevos libros en el catálogo.</p>
+                        <a href="{% url 'crear_libro' %}" class="btn btn-primary w-100">Agregar</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-custom">
+                    <div class="card-body">
+                        <h5 class="card-title">Lista de Libros</h5>
+                        <p class="card-text">Consulta todos los libros registrados.</p>
+                        <a href="{% url 'libro_list' %}" class="btn btn-secondary w-100">Ver Lista</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Autores -->
+    <section id="autores" class="mb-5">
+        <h2 class="titulo-seccion">✍️ AUTORES</h2>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card card-custom">
+                    <div class="card-body">
+                        <h5 class="card-title">Agregar Autor</h5>
+                        <p class="card-text">Añade información de nuevos autores.</p>
+                        <a href="{% url 'crear_autor' %}" class="btn btn-primary w-100">Agregar</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-custom">
+                    <div class="card-body">
+                        <h5 class="card-title">Lista de Autores</h5>
+                        <p class="card-text">Consulta todos los autores registrados.</p>
+                        <a href="{% url 'lista_autores' %}" class="btn btn-secondary w-100">Ver Lista</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Préstamos -->
+    <section id="prestamos" class="mb-5">
+        <h2 class="titulo-seccion">📗 PRÉSTAMOS</h2>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card card-custom">
+                    <div class="card-body">
+                        <h5 class="card-title">Registrar Préstamo</h5>
+                        <p class="card-text">Controla la salida de libros.</p>
+                        <a href="{% url 'crear_prestamo' %}" class="btn btn-primary w-100">Registrar</a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="card card-custom">
+                    <div class="card-body">
+                        <h5 class="card-title">Historial de Préstamos</h5>
+                        <p class="card-text">Consulta los préstamos realizados.</p>
+                        <a href="{% url 'lista_prestamos' %}" class="btn btn-secondary w-100">Ver Historial</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección Multas -->
+    <section id="multas" class="mb-5">
+        <h2 class="titulo-seccion">💰 MULTAS</h2>
+
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-4">
+                <div class="card card-custom">
+                    <div class="card-body">
+                        <h5 class="card-title">Lista de Multas</h5>
+                        <p class="card-text">Consulta multas activas.</p>
+                        <a href="{% url 'lista_multas' %}" class="btn btn-secondary w-100">Ver Lista</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</div>
+
+{% endblock %}

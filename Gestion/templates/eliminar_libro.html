@@ -1,0 +1,12 @@
+{% extends "index.html" %}
+{% block contenido %}
+<div class="login-container animate__animated animate__shakeX">
+    <h2 class="login-title">⚠️ ¿Eliminar Libro?</h2>
+    <p class="text-center">¿Estás seguro de que deseas eliminar <strong>"{{ libro.titulo }}"</strong>? Esta acción no se puede deshacer.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger w-100">Sí, Eliminar Definitivamente</button>
+        <a href="{% url 'libro_list' %}" class="btn btn-secondary w-100 mt-2">No, Cancelar</a>
+    </form>
+</div>
+{% endblock %}

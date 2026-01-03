@@ -7,6 +7,11 @@ urlpatterns = [
 
     #Path class view
     path('libros_list/', LibroListView.as_view(), name='libro_list'),
+    path('libros/<int:pk>/', LibroDetalleView.as_view(), name='libro_detalle'),
+    path('libros/<int:pk>/editar/', LibroUpdateView.as_view(), name='libro_editar'),
+    path('libros/<int:pk>/eliminar/', LibroDeleteView.as_view(), name='libro_eliminar'),  
+
+    path('prestamos/<int:pk>/eliminar/', PrestamoDeleteView.as_view(), name='eliminar_prestamo'),  
 
     #Gestion de Usuarios
     path('login/', auth_views.LoginView.as_view(), name = 'login'),

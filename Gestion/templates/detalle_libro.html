@@ -1,0 +1,18 @@
+{% extends "index.html" %}
+{% block contenido %}
+<div class="container mt-4 animate__animated animate__fadeIn">
+    <div class="library-card">
+        <h2 class="library-title">📖 Detalle: {{ libro.titulo }}</h2>
+        <hr>
+        <p><strong>Autor:</strong> {{ libro.autor }}</p>
+        <p><strong>ISBN:</strong> {{ libro.isbn|default:"No registrado" }}</p>
+        <p><strong>Descripción:</strong> {{ libro.descripcion|default:"Sin descripción disponible." }}</p>
+        <p><strong>Stock:</strong> {{ libro.ejemplares_disponibles }} de {{ libro.cantidad_total }}</p>
+        
+        <div class="mt-4">
+            <a href="{% url 'libro_list' %}" class="btn btn-secondary">Volver</a>
+            <a href="{% url 'libro_editar' libro.pk %}" class="btn btn-warning">Editar</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

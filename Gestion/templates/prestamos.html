@@ -31,25 +31,21 @@
         color: #4a372a;
     }
 
-    .btn-library {
-        background-color: #8b5e34;
-        border: none;
-        color: #fff;
-        font-weight: bold;
-    }
-
-    .btn-library:hover {
-        background-color: #6d4828;
-        color: #fff;
+    /* Estilo para los botones de acción */
+    .btn-action {
+        padding: 4px 8px;
+        font-size: 0.85rem;
+        border-radius: 6px;
+        transition: 0.3s;
     }
 </style>
 
-<div class="container mt-4">
+<div class="container mt-4 animate__animated animate__fadeIn">
     <h2 class="text-center mb-4 library-title">📋 Gestión de Préstamos</h2>
 
     <div class="library-card">
         <div class="table-responsive">
-            <table class="table">
+            <table class="table table-hover align-middle">
                 <thead>
                     <tr>
                         <th>Libro</th>
@@ -57,29 +53,50 @@
                             <th>Socio/Usuario</th>
                         {% endif %}
                         <th>Estado</th>
-                        <th>Acciones</th>
+                        <th class="text-center">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for prestamo in prestamos %}
-                    <tr>
-                        <td>{{ prestamo.libro.titulo }}</td>
+                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: {{ forloop.counter0 }}0ms;">
+                        <td><strong>{{ prestamo.libro.titulo }}</strong></td>
                         {% if user.is_staff %}
-                            <td>{{ prestamo.usuario.username }}</td>
+                            <td><i class="bi bi-person"></i> {{ prestamo.usuario.username }}</td>
                         {% endif %}
                         <td>
-                            {{ prestamo.get_estado_display }}
-                        </td>
-                        <td>
-                            {% if not prestamo.fecha_devolucion %}
-                                <a href="{% url 'devolver_libro' prestamo.id %}" class="btn btn-warning btn-sm">Devolver</a>
-                            {% endif %}
-                            
-                            {# Solo el Admin puede gestionar multas #}
-                            {% if user.is_staff and prestamo.estado == 'm' %}
-                                <a href="{% url 'crear_multa' prestamo.id %}" class="btn btn-danger btn-sm">Sancionar</a>
+                            {% if prestamo.estado == 'p' %}
+                                <span class="badge bg-info text-dark">Prestado</span>
+                            {% elif prestamo.estado == 'm' %}
+                                <span class="badge bg-danger">En Mora</span>
+                            {% else %}
+                                <span class="badge bg-success">Devuelto</span>
                             {% endif %}
                         </td>
+                        <td class="text-center">
+                            <div class="d-flex justify-content-center gap-2">
+                                {% if not prestamo.fecha_devolucion %}
+                                    <a href="{% url 'devolver_libro' prestamo.id %}" class="btn btn-warning btn-action shadow-sm" title="Registrar Devolución">
+                                        ↩️ Devolver
+                                    </a>
+                                {% endif %}
+                                
+                                {% if user.is_staff and prestamo.estado == 'm' %}
+                                    <a href="{% url 'crear_multa' prestamo.id %}" class="btn btn-dark btn-action shadow-sm" title="Generar Multa">
+                                        ⚖️ Sancionar
+                                    </a>
+                                {% endif %}
+
+                                {% if user.is_staff %}
+                                    <a href="{% url 'eliminar_prestamo' prestamo.pk %}" class="btn btn-outline-danger btn-action" title="Eliminar Registro">
+                                        🗑️
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">No se encontraron registros de préstamos.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

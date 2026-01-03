@@ -1,0 +1,26 @@
+{% extends "index.html" %}
+{% block contenido %}
+
+<div class="container mt-4 animate__animated animate__fadeIn">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="library-card border-danger">
+                <h2 class="library-title text-danger text-center">⚠️ Confirmar Eliminación</h2>
+                <hr>
+                <p class="text-center">
+                    ¿Estás seguro de que deseas eliminar el registro del préstamo del libro: <br>
+                    <strong>"{{ object.libro.titulo }}"</strong>?<br>
+                    <small class="text-muted">Usuario: {{ object.usuario.username }}</small>
+                </p>
+                
+                <form method="post" class="text-center mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Sí, Eliminar Registro</button>
+                    <a href="{% url 'lista_prestamos' %}" class="btn btn-secondary">Cancelar</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

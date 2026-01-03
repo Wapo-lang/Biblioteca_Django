@@ -6,3 +6,4 @@ from .models import *
 admin.site.register(Autor)
 admin.site.register(Libro)
 admin.site.register(Prestamos)
+admin.site.register(Multa)

@@ -77,32 +77,28 @@
                 <thead>
                     <tr>
                         <th>Título de la Obra</th>
-                        <th>ISBN</th>
                         <th>Autor</th>
                         <th class="text-center">Disponibilidad</th>
-                    </tr>
+                        <th class="text-center">Acciones</th> </tr>
                 </thead>
                 <tbody>
                     {% for libro in libros %}
-                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: {{ forloop.counter0 }}00ms;">
+                    <tr>
                         <td><strong>{{ libro.titulo }}</strong></td>
-                        <td class="text-muted">{{ libro.isbn|default:"Sin registro" }}</td>
                         <td>{{ libro.autor.nombre }} {{ libro.autor.apellido }}</td>
                         <td class="text-center">
-                            {% if libro.disponible %}
-                                <span class="badge rounded-pill bg-success" style="min-width: 100px;">
-                                    Disponible
-                                </span>
-                            {% else %}
-                                <span class="badge rounded-pill bg-danger" style="min-width: 100px;">
-                                    En Préstamo
-                                </span>
+                            </td>
+                        <td class="text-center">
+                            <a href="{% url 'libro_detalle' libro.pk %}" class="text-primary me-2" title="Ver detalle">🔍</a>
+                            
+                            {% if perms.Gestion.change_libro %}
+                            <a href="{% url 'libro_editar' libro.pk %}" class="text-warning me-2" title="Editar">✏️</a>
+                            {% endif %}
+
+                            {% if perms.Gestion.delete_libro %}
+                            <a href="{% url 'libro_eliminar' libro.pk %}" class="text-danger" title="Eliminar">🗑️</a>
                             {% endif %}
                         </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">No hay libros en el catálogo actualmente.</td>
                     </tr>
                     {% endfor %}
                 </tbody>

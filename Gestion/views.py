@@ -305,6 +305,7 @@ def registro(request):
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.urls import reverse_lazy
+from django.db.models import ProtectedError
 
 class LibroListView(LoginRequiredMixin, ListView):
     model = Libro
@@ -335,3 +336,27 @@ class LibroDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     template_name = 'Gestion/templates/eliminar_libro.html'
     success_url = reverse_lazy('libro_list')
     permission_required = 'Gestion.delete_libro'
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except ProtectedError:
+            messages.error(request, "No se puede eliminar este libro porque tiene préstamos registrados. Debes eliminar o archivar los préstamos primero.")
+            return redirect('libro_list')
+        
+class PrestamoDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+    model = Prestamos
+    template_name = 'gestion/templates/eliminar_prestamo.html'
+    success_url = reverse_lazy('lista_prestamos')
+    permission_required = 'gestion.delete_prestamos'
+
+    def post(self, request, *args, **kwargs):
+        try:
+            return super().post(request, *args, **kwargs)
+        except ProtectedError:
+            # Mensaje claro para el administrador
+            messages.error(request, 
+                "No se puede eliminar este préstamo porque tiene una MULTA asociada. "
+                "Primero debes eliminar la multa correspondiente en el panel de multas."
+            )
+            return redirect('lista_prestamos')
