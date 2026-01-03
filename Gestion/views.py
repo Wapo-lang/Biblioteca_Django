@@ -310,19 +310,18 @@ class LibroListView(LoginRequiredMixin, ListView):
     model = Libro
     template_name = 'Gestion/templates/libro_view.html'
     context_object_name = 'libros'
-    paginate_by = 10
-
-class LibroDetalleView(LoginRequiredMixin, DetailView):
-    model = Libro
-    template_name = 'Gestion/templates/detalle_libro.html'
-    context_object_name = 'libro'
-
+    paginate_by = 5
 class LibroCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Libro
     fields = ['titulo', 'autor', 'disponible']
     template_name = 'Gestion/templates/templates_crear/crear_libro.html'
     success_url = reverse_lazy('libro_list')
     permission_required = 'Gestion.add_libro'
+
+class LibroDetalleView(LoginRequiredMixin, DetailView):
+    model = Libro
+    template_name = 'Gestion/templates/detalle_libro.html'
+    context_object_name = 'libro'
 
 class LibroUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Libro

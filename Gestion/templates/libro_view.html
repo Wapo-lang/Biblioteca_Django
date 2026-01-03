@@ -1,40 +1,132 @@
 {% extends "index.html" %}
-
 {% block contenido %}
 
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Titulo</th>
-            <th>Autor</th>
+<style>
+    /* Mantenemos tus estilos originales de "Catálogo de Obras" */
+    .library-title {
+        color: #5a3825;
+        font-weight: bold;
+        text-shadow: 1px 1px #d6c1a5;
+    }
 
-        </tr>
-    </thead>
-    <tbody>
-        {% for libro in libros %}
-        <tr>
-            <td>{{ libro.id }}</td>
-            <td>{{ libro.titulo }}</td>
-            <td>{{ libro.autor.nombre }} {{ libro.autor.apellido }}</td>
+    .library-card {
+        background: #fff9f1;
+        border: 2px solid #d4b894;
+        border-radius: 12px;
+        box-shadow: 0 4px 10px rgba(80, 55, 35, 0.25);
+        padding: 20px;
+        position: relative;
+    }
 
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
+    .library-card::before {
+        content: "";
+        width: 100%;
+        height: 12px;
+        position: absolute;
+        top: 0; left: 0;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
+    }
 
-{%if is_paginated %}
-<div class='pagination'>
-    {% if page_obj.has_previous %}
-    <a href="?page=1">Primera</a>
-    <a href="?page={{ page_obj.previous_page_number}}">Anterior</a>
-    {% endif %}
-    <span> {{ page_obj.numer }} de {{ page_obj.paginator.num_pages }}</span>
+    /* Estilos para la paginación elegante */
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 25px;
+    }
 
-    {% if page_obj.has_next %}
-    <a href="?page={{ page_obj.next_page_number }}">siguiente</a>
-    <a href="?page={{ page_obj.paginator.num_pages }}">Última</a>
+    .btn-page {
+        background: #8b5e34;
+        color: white;
+        border: none;
+        padding: 6px 14px;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: bold;
+        transition: 0.3s;
+        font-size: 0.9rem;
+    }
+
+    .btn-page:hover {
+        background: #5c422e;
+        color: #f8e8c8;
+        transform: translateY(-2px);
+    }
+
+    .page-current {
+        font-weight: bold;
+        color: #5a3825;
+        align-self: center;
+        font-family: "Georgia", serif;
+    }
+</style>
+
+<div class="container mt-4 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="library-title m-0">📚 Catálogo de Obras</h2>
+        <a href="{% url 'crear_libro' %}" class="btn btn-primary shadow-sm">
+            + Añadir Nuevo Libro
+        </a>
+    </div>
+
+    <div class="library-card">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Título de la Obra</th>
+                        <th>ISBN</th>
+                        <th>Autor</th>
+                        <th class="text-center">Disponibilidad</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for libro in libros %}
+                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: {{ forloop.counter0 }}00ms;">
+                        <td><strong>{{ libro.titulo }}</strong></td>
+                        <td class="text-muted">{{ libro.isbn|default:"Sin registro" }}</td>
+                        <td>{{ libro.autor.nombre }} {{ libro.autor.apellido }}</td>
+                        <td class="text-center">
+                            {% if libro.disponible %}
+                                <span class="badge rounded-pill bg-success" style="min-width: 100px;">
+                                    Disponible
+                                </span>
+                            {% else %}
+                                <span class="badge rounded-pill bg-danger" style="min-width: 100px;">
+                                    En Préstamo
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">No hay libros en el catálogo actualmente.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <nav class="pagination-container animate__animated animate__fadeInUp">
+        {% if page_obj.has_previous %}
+            <a href="?page=1" class="btn-page">« Primera</a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="btn-page">Anterior</a>
+        {% endif %}
+
+        <span class="page-current">
+            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="btn-page">Siguiente</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-page">Última »</a>
+        {% endif %}
+    </nav>
     {% endif %}
 </div>
-{%endif%} 
-{% endblock %}
+
+{% endblock %}

@@ -19,7 +19,6 @@ urlpatterns = [
     path('registro/', registro, name='registro'),
 
     #libros
-    path('libros/', lista_libros, name='lista_libros'),
     path('libros/nuevo', crear_libro, name='crear_libro'),
 
     #autores

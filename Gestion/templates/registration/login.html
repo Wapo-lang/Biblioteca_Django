@@ -3,120 +3,154 @@
 {% block contenido %}
 
 <style>
-    .login-container {
-        max-width: 420px;
-        margin: 60px auto;
-        background: #fffaf2;
-        border: 2px solid #d4b894;
-        border-radius: 14px;
-        padding: 30px;
-        box-shadow: 0 6px 20px rgba(80, 55, 35, 0.3);
-        font-family: "Georgia", serif;
-        color: #4a372a;
-        position: relative;
-        transition: all 0.3s ease;
+/* ===== ANIMACIONES ===== */
+@keyframes fadeSlideUp {
+    from {
+        opacity: 0;
+        transform: translateY(40px) scale(0.96);
     }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
 
-    .login-container::before {
-        content: "";
-        width: 100%;
-        height: 12px;
-        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
-        position: absolute;
-        top: 0;
-        left: 0;
-        border-top-left-radius: 12px;
-        border-top-right-radius: 12px;
-    }
+@keyframes glow {
+    0% { box-shadow: 0 0 0 rgba(139,94,52,0.3); }
+    50% { box-shadow: 0 0 16px rgba(139,94,52,0.6); }
+    100% { box-shadow: 0 0 0 rgba(139,94,52,0.3); }
+}
 
-    .login-title {
-        text-align: center;
-        margin-bottom: 25px;
-        font-weight: bold;
-        color: #5a3825;
-        text-shadow: 1px 1px #d6c1a5;
-    }
+@keyframes shake {
+    0% { transform: translateX(0); }
+    25% { transform: translateX(-6px); }
+    50% { transform: translateX(6px); }
+    75% { transform: translateX(-4px); }
+    100% { transform: translateX(0); }
+}
 
-    .form-label {
-        font-weight: bold;
-        margin-top: 10px;
-    }
+/* ===== CONTENEDOR ===== */
+.login-container {
+    max-width: 420px;
+    margin: 70px auto;
+    background: #fffaf2;
+    border: 2px solid #d4b894;
+    border-radius: 16px;
+    padding: 32px;
+    box-shadow: 0 12px 30px rgba(80, 55, 35, 0.35);
+    font-family: "Georgia", serif;
+    color: #4a372a;
+    position: relative;
+    animation: fadeSlideUp 0.9s ease;
+}
 
-    .form-control {
-        background: #fffdf7;
-        border: 1px solid #c5a886;
-        border-radius: 8px;
-        padding: 10px;
-        font-size: 16px;
-        transition: all 0.3s ease;
-    }
+.login-container::before {
+    content: "";
+    height: 10px;
+    width: 100%;
+    background: linear-gradient(90deg, #8b5e34, #b07c4a, #8b5e34);
+    position: absolute;
+    top: 0;
+    left: 0;
+    border-radius: 16px 16px 0 0;
+}
 
-    .form-control:focus {
-        border-color: #8b5e34;
-        box-shadow: 0 0 8px rgba(139, 94, 52, 0.4);
-        transform: scale(1.02); /* Pequeño aumento al escribir */
-    }
+/* ===== TITULO ===== */
+.login-title {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: bold;
+    color: #5a3825;
+    letter-spacing: 1px;
+}
 
-    .btn-login {
-        background: #8b5e34;
-        color: #fff;
-        width: 100%;
-        padding: 10px;
-        margin-top: 20px;
-        font-weight: bold;
-        border-radius: 8px;
-        border: none;
-        transition: all 0.3s ease;
-    }
+/* ===== INPUTS ===== */
+.form-label {
+    font-weight: bold;
+    margin-top: 12px;
+}
 
-    .btn-login:hover {
-        background: #6d4828;
-        color: #fff7e6;
-        letter-spacing: 1px; /* Efecto elegante al pasar el mouse */
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-    }
+.form-control {
+    background: #fffdf7;
+    border: 1px solid #c5a886;
+    border-radius: 10px;
+    padding: 12px;
+    font-size: 15px;
+    transition: all 0.3s ease;
+}
 
-    .btn-login:active {
-        transform: scale(0.96);
-    }
+.form-control:focus {
+    border-color: #8b5e34;
+    box-shadow: 0 0 10px rgba(139,94,52,0.35);
+    transform: translateY(-2px);
+}
 
-    .error-text {
-        color: #b82d2d;
-        font-weight: bold;
-        margin-bottom: 15px;
-        text-align: center;
-        background: #ffe6e6;
-        padding: 8px;
-        border-radius: 6px;
-        border: 1px solid #f5c2c2;
-    }
+/* ===== BOTON ===== */
+.btn-login {
+    background: linear-gradient(135deg, #8b5e34, #6d4828);
+    color: #fff;
+    width: 100%;
+    padding: 12px;
+    margin-top: 22px;
+    font-weight: bold;
+    border-radius: 10px;
+    border: none;
+    letter-spacing: 1px;
+    transition: all 0.35s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-login:hover {
+    animation: glow 1.5s infinite;
+    transform: translateY(-2px);
+}
+
+.btn-login:active {
+    transform: scale(0.96);
+}
+
+/* ===== ERROR ===== */
+.error-text {
+    color: #b82d2d;
+    font-weight: bold;
+    text-align: center;
+    background: #ffe6e6;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #f5c2c2;
+    margin-bottom: 18px;
+    animation: shake 0.45s;
+}
 </style>
 
-<div class="login-container animate__animated animate__backInUp">
-    
+<div class="login-container">
+
     <h2 class="login-title">🔐 Iniciar Sesión</h2>
 
     {% if form.errors %}
-        <div class="animate__animated animate__shakeX">
-            <p class="error-text">⚠️ Usuario o contraseña incorrectos.</p>
-        </div>
+        <p class="error-text">⚠️ Usuario o contraseña incorrectos</p>
     {% endif %}
 
     <form method="POST">
         {% csrf_token %}
 
-        <div class="mb-2">
-            <label for="id_username" class="form-label">Usuario:</label>
-            <input type="text" name="username" id="id_username" class="form-control" required placeholder="Tu nombre de usuario">
+        <div class="mb-3">
+            <label for="id_username" class="form-label">Usuario</label>
+            <input type="text" name="username" id="id_username"
+                   class="form-control" required
+                   placeholder="Tu usuario">
         </div>
 
-        <div class="mb-2">
-            <label for="id_password" class="form-label">Contraseña:</label>
-            <input type="password" name="password" id="id_password" class="form-control" required placeholder="••••••••">
+        <div class="mb-3">
+            <label for="id_password" class="form-label">Contraseña</label>
+            <input type="password" name="password" id="id_password"
+                   class="form-control" required
+                   placeholder="••••••••">
         </div>
 
-        <button type="submit" class="btn-login animate__animated animate__pulse animate__infinite animate__slow">
-            Entrar al Sistema
+        <button type="submit" class="btn-login">
+            Entrar al sistema
         </button>
     </form>
 </div>

@@ -73,10 +73,6 @@ class Prestamos(models.Model):
 
     @property
     def multa_total(self):
-        """
-        Lógica Odoo: Suma la multa por días de retraso + la multa fija 
-        (por ejemplo, si además de retraso el libro vino dañado)
-        """
         tarifa_retraso = Decimal('0.50')
         total_retraso = Decimal(self.dias_retraso) * tarifa_retraso
         return total_retraso + Decimal(self.multa_fija)

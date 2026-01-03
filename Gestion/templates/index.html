@@ -122,20 +122,29 @@
 
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav ms-auto">
-                <li class="nav-item"><a class="nav-link" href="{% url 'index' %}">Inicio</a></li>
 
-                {% if not user.is_authenticated %}
-                <li class="nav-item"><a class="nav-link" href="{% url 'login' %}">Ingresar</a></li>
-                <li class="nav-item"><a class="nav-link" href="{% url 'registro' %}">Registrarse</a></li>
-                {% endif %}
-                
                 {% if user.is_authenticated %}
-                <form method="POST" action="{% url 'logout' %}">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-secondary ms-3">Cerrar Sesión</button>
-                </form>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'index' %}">Inicio</a>
+                    </li>
+
+                    <form method="POST" action="{% url 'logout' %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-secondary ms-3">
+                            Cerrar Sesión
+                        </button>
+                    </form>
+                {% else %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'login' %}">Ingresar</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'registro' %}">Registrarse</a>
+                    </li>
                 {% endif %}
+
             </ul>
+
         </div>
     </div>
 </nav>
