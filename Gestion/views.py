@@ -28,26 +28,32 @@ def lista_libros(request):
 def devolver_libro(request, prestamo_id):
     prestamo = get_object_or_404(Prestamos, id=prestamo_id)
     
-    # RESTRICCIÓN DE SEGURIDAD:
-    # Si el usuario NO es admin y el préstamo NO le pertenece, denegar acceso.
+    # Seguridad básica
     if not request.user.is_staff and prestamo.usuario != request.user:
-        messages.error(request, "No tienes permiso para devolver un libro ajeno.")
+        messages.error(request, "No tienes permiso.")
         return redirect('lista_prestamos')
     
     if prestamo.fecha_devolucion is None:
         libro = prestamo.libro
-        libro.disponible = True
+        
+        # --- RECUPERAR DISPONIBILIDAD ---
+        libro.ejemplares_disponibles += 1 # Sumamos el que regresa
+        libro.disponible = True           # Al haber 1 o más, ya está disponible
         libro.save()
         
         prestamo.fecha_devolucion = timezone.now().date()
         
-        # Lógica de estado según retraso
-        if prestamo.dias_retraso > 0:
-            prestamo.estado = 'm'  # Estado multa para que el Admin lo vea en su panel
-            messages.warning(request, f"Devolución con retraso registrada.")
+        # Manejo de días de retraso para el mensaje
+        retraso = prestamo.dias_retraso
+        # Convertimos a número simple para evitar el error de concatenación anterior
+        dias = retraso.days if hasattr(retraso, 'days') else retraso
+
+        if dias > 0:
+            prestamo.estado = 'm'
+            messages.warning(request, f"Devolución con retraso de {dias} días.")
         else:
-            prestamo.estado = 'd'  # Estado devuelto normal
-            messages.success(request, f"Libro '{libro.titulo}' devuelto con éxito.")
+            prestamo.estado = 'd'
+            messages.success(request, f"Libro '{libro.titulo}' devuelto correctamente.")
             
         prestamo.save()
     
@@ -118,11 +124,11 @@ def crear_libro(request):
                     autor=autor,
                     isbn=isbn_final,
                     descripcion=descripcion,
-                    cantidad_total=cantidad, # Nuevo campo de Odoo
+                    cantidad_total=cantidad,
                     disponible=True
                 )
                 messages.success(request, "¡Libro guardado exitosamente!")
-                return redirect('lista_libros')
+                return redirect('libro_list')
 
     # Actualizamos la lista de autores por si se creó uno nuevo en este request
     autores = Autor.objects.all()

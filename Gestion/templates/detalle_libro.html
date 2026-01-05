@@ -7,11 +7,32 @@
         <p><strong>Autor:</strong> {{ libro.autor }}</p>
         <p><strong>ISBN:</strong> {{ libro.isbn|default:"No registrado" }}</p>
         <p><strong>Descripción:</strong> {{ libro.descripcion|default:"Sin descripción disponible." }}</p>
-        <p><strong>Stock:</strong> {{ libro.ejemplares_disponibles }} de {{ libro.cantidad_total }}</p>
+        
+        <p>
+            <strong>Stock:</strong> 
+            {% if libro.ejemplares_disponibles > 0 %}
+                <span class="badge bg-success">{{ libro.ejemplares_disponibles }} de {{ libro.cantidad_total }} disponibles</span>
+            {% else %}
+                <span class="badge bg-danger">Agotado (0 de {{ libro.cantidad_total }})</span>
+            {% endif %}
+        </p>
         
         <div class="mt-4">
             <a href="{% url 'libro_list' %}" class="btn btn-secondary">Volver</a>
-            <a href="{% url 'libro_editar' libro.pk %}" class="btn btn-warning">Editar</a>
+            
+            {% if perms.Gestion.change_libro %}
+                <a href="{% url 'libro_editar' libro.pk %}" class="btn btn-warning">Editar</a>
+            {% endif %}
+
+            {% if libro.ejemplares_disponibles > 0 %}
+                <a href="{% url 'crear_prestamo' %}?libro_id={{ libro.id }}" class="btn btn-primary shadow-sm">
+                    Solicitar Préstamo
+                </a>
+            {% else %}
+                <button class="btn btn-secondary" disabled>
+                    🚫 No hay ejemplares
+                </button>
+            {% endif %}
         </div>
     </div>
 </div>

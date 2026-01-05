@@ -86,17 +86,36 @@
                     <tr>
                         <td><strong>{{ libro.titulo }}</strong></td>
                         <td>{{ libro.autor.nombre }} {{ libro.autor.apellido }}</td>
+                        
                         <td class="text-center">
-                            </td>
+                            {% if libro.ejemplares_disponibles > 0 %}
+                                <div class="mb-1">
+                                    <span class="badge rounded-pill bg-success" style="font-size: 0.85rem;">✅ Disponible</span>
+                                </div>
+                                <small class="text-muted">{{ libro.ejemplares_disponibles }} de {{ libro.cantidad_total }}</small>
+                            {% else %}
+                                <div class="mb-1">
+                                    <span class="badge rounded-pill bg-danger" style="font-size: 0.85rem;">❌ Agotado</span>
+                                </div>
+                                <small class="text-muted">Sin ejemplares</small>
+                            {% endif %}
+                        </td>
+
                         <td class="text-center">
-                            <a href="{% url 'libro_detalle' libro.pk %}" class="text-primary me-2" title="Ver detalle">🔍</a>
-                            
+                            <a href="{% url 'libro_detalle' libro.pk %}" class="text-primary me-2" title="Ver detalle" style="text-decoration: none;">🔍</a>
+
+                            {% if libro.ejemplares_disponibles > 0 %}
+                                <a href="{% url 'crear_prestamo' %}?libro_id={{ libro.id }}" class="text-success me-2" title="Prestar ahora" style="text-decoration: none;">📚</a>
+                            {% else %}
+                                <span class="text-muted me-2" title="Sin stock" style="cursor: not-allowed;">📚</span>
+                            {% endif %}
+
                             {% if perms.Gestion.change_libro %}
-                            <a href="{% url 'libro_editar' libro.pk %}" class="text-warning me-2" title="Editar">✏️</a>
+                                <a href="{% url 'libro_editar' libro.pk %}" class="text-warning me-2" title="Editar" style="text-decoration: none;">✏️</a>
                             {% endif %}
 
                             {% if perms.Gestion.delete_libro %}
-                            <a href="{% url 'libro_eliminar' libro.pk %}" class="text-danger" title="Eliminar">🗑️</a>
+                                <a href="{% url 'libro_eliminar' libro.pk %}" class="text-danger" title="Eliminar" style="text-decoration: none;">🗑️</a>
                             {% endif %}
                         </td>
                     </tr>

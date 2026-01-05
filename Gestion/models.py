@@ -22,7 +22,7 @@ class Libro(models.Model):
     autor = models.ForeignKey(Autor, related_name="libros", on_delete=models.PROTECT)
 
     cantidad_total = models.PositiveIntegerField(default=1) 
-    ejemplares_disponibles = models.IntegerField(default=1, editable=False)
+    ejemplares_disponibles = models.IntegerField(default=1)
     disponible = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):
@@ -85,29 +85,33 @@ class Prestamos(models.Model):
         return "A tiempo"
 
     def save(self, *args, **kwargs):
-            referencia = self.fecha_prestamo or timezone.now().date()
-            
-            if isinstance(referencia, str):
-                referencia = datetime.datetime.strptime(referencia, '%Y-%m-%d').date()
-                self.fecha_prestamo = referencia # Actualizamos el campo con el objeto real
-            
-            # Autocalcular fecha máxima (si no existe)
-            if not self.fecha_max:
-                self.fecha_max = referencia + timedelta(days=2)
-
-            if not self.pk: 
-                if not self.libro.disponible:
-                    raise ValidationError("Este libro no tiene ejemplares disponibles.")
-
-                self.libro.disponible = False
-                self.libro.save()
-                
-            if self.fecha_max and not self.fecha_devolucion:
-                if timezone.now().date() > self.fecha_max:
-                    self.estado = 'm' # En mora
-
-            super().save(*args, **kwargs)
+        referencia = self.fecha_prestamo or timezone.now().date()
         
+        if isinstance(referencia, str):
+            referencia = datetime.datetime.strptime(referencia, '%Y-%m-%d').date()
+            self.fecha_prestamo = referencia 
+        
+        # Autocalcular fecha máxima
+        if not self.fecha_max:
+            self.fecha_max = referencia + timedelta(days=2)
+
+        if not self.pk:  # Si es un préstamo nuevo
+            if self.libro.ejemplares_disponibles > 0:
+                self.libro.ejemplares_disponibles -= 1
+                
+                if self.libro.ejemplares_disponibles == 0:
+                    self.libro.disponible = False
+                
+                self.libro.save() # Guardamos los cambios en el libro
+            else:
+                raise ValidationError("Este libro no tiene ejemplares disponibles en stock.")
+
+        if self.fecha_max and not self.fecha_devolucion:
+            if timezone.now().date() > self.fecha_max:
+                self.estado = 'm' 
+
+        super().save(*args, **kwargs)
+
 class Multa(models.Model):
     prestamo = models.ForeignKey(Prestamos, related_name="multas", on_delete=models.PROTECT)
     tipo_multa = models.CharField(max_length=50, choices=[('retraso', 'Retraso'), ('perdida', 'Pérdida del libro'), ('deterioro', 'Deterioro del libro')])
