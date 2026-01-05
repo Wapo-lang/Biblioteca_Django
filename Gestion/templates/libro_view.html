@@ -2,7 +2,7 @@
 {% block contenido %}
 
 <style>
-    /* Mantenemos tus estilos originales de "Catálogo de Obras" */
+    /* Mantenemos tus estilos originales */
     .library-title {
         color: #5a3825;
         font-weight: bold;
@@ -27,6 +27,37 @@
         border-top-left-radius: 10px;
         border-top-right-radius: 10px;
         background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
+    }
+
+    /* ESTILOS PARA LA PORTADA (PILLOW) */
+    .book-thumbnail {
+        width: 45px;
+        height: 65px;
+        object-fit: cover;
+        border-radius: 4px;
+        border: 1px solid #8b5e34;
+        transition: transform 0.3s ease;
+        cursor: zoom-in;
+    }
+
+    .book-thumbnail:hover {
+        transform: scale(3.5); /* Efecto lupa */
+        position: relative;
+        z-index: 50;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+
+    .no-cover-placeholder {
+        width: 45px;
+        height: 65px;
+        background: #e9e0d2;
+        border: 1px dashed #d4b894;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.6rem;
+        color: #8b5e34;
+        text-align: center;
     }
 
     /* Estilos para la paginación elegante */
@@ -76,14 +107,25 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
-                        <th>Título de la Obra</th>
+                        <th style="width: 60px;">Obra</th> <th>Título de la Obra</th>
                         <th>Autor</th>
                         <th class="text-center">Disponibilidad</th>
-                        <th class="text-center">Acciones</th> </tr>
+                        <th class="text-center">Acciones</th>
+                    </tr>
                 </thead>
                 <tbody>
                     {% for libro in libros %}
                     <tr>
+                        <td>
+                            {% if libro.portada %}
+                                <img src="{{ libro.portada.url }}" class="book-thumbnail" alt="Portada de {{ libro.titulo }}">
+                            {% else %}
+                                <div class="no-cover-placeholder">
+                                    <span>Sin<br>Foto</span>
+                                </div>
+                            {% endif %}
+                        </td>
+
                         <td><strong>{{ libro.titulo }}</strong></td>
                         <td>{{ libro.autor.nombre }} {{ libro.autor.apellido }}</td>
                         

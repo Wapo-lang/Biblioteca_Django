@@ -23,6 +23,7 @@ class Libro(models.Model):
 
     cantidad_total = models.PositiveIntegerField(default=1) 
     ejemplares_disponibles = models.IntegerField(default=1)
+    portada = models.ImageField(upload_to='portadas/', blank=True, null=True)
     disponible = models.BooleanField(default=True)
 
     def save(self, *args, **kwargs):

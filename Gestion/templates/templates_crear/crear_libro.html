@@ -91,6 +91,7 @@
 
         <form method="POST">
             {% csrf_token %}
+            
             <div class="mb-3">
                 <label class="form-label">ISBN del Libro:</label>
                 <div class="input-group">
@@ -98,6 +99,14 @@
                     <button type="submit" name="buscar_api" class="btn btn-outline-secondary">🔍 Buscar</button>
                 </div>
             </div>
+
+            {% if datos_api.portada_url %}
+            <div class="mb-3 text-center animate__animated animate__fadeIn">
+                <label class="form-label d-block">Portada Detectada:</label>
+                <img src="{{ datos_api.portada_url }}" alt="Portada" class="img-thumbnail shadow-sm mb-2" style="max-height: 200px; border: 3px solid #d4b894;">
+                <input type="hidden" name="portada_url_temp" value="{{ datos_api.portada_url }}">
+            </div>
+            {% endif %}
 
             <div class="mb-3">
                 <label class="form-label">Título:</label>

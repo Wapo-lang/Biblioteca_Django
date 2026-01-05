@@ -7,8 +7,10 @@ from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
 import requests
+from io import BytesIO
+from PIL import Image
+from django.core.files.base import ContentFile
 from django.contrib import messages
-from django.core.exceptions import PermissionDenied
 
 from .models import Autor, Libro, Prestamos, Multa
 
@@ -90,15 +92,12 @@ def crear_libro(request):
                     autores_api = libro_info.get('authors', [])
                     
                     autor_id_final = None
-                    
                     if autores_api:
                         nombre_completo = autores_api[0].get('name')
-                        # Dividir nombre y apellido (Ej: "George Orwell" -> ["George", "Orwell"])
                         partes = nombre_completo.split(' ', 1)
                         nom = partes[0]
                         ape = partes[1] if len(partes) > 1 else " "
 
-                        # MÁGIA AQUÍ: Si no existe, lo crea automáticamente
                         autor_obj, creado = Autor.objects.get_or_create(
                             nombre=nom, 
                             apellido=ape
@@ -108,11 +107,15 @@ def crear_libro(request):
                         if creado:
                             messages.info(request, f"Se ha registrado un nuevo autor: {nombre_completo}")
 
+                    # Generamos la URL de la portada para mostrarla en el HTML
+                    portada_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
+
                     datos_api = {
                         'titulo': libro_info.get('title'),
                         'descripcion': libro_info.get('notes') or libro_info.get('description') or "Sin sinopsis.",
                         'isbn': isbn,
-                        'autor_id': autor_id_final # Este ID se usará en el select del HTML
+                        'autor_id': autor_id_final,
+                        'portada_url': portada_url 
                     }
                 else:
                     messages.error(request, "El ISBN no devolvió resultados.")
@@ -125,11 +128,14 @@ def crear_libro(request):
             autor_id = request.POST.get('autor')
             isbn_final = request.POST.get('isbn_final')
             descripcion = request.POST.get('descripcion')
-            cantidad = request.POST.get('cantidad', 1) # Añade un input de cantidad en tu HTML
+            cantidad = request.POST.get('cantidad', 1)
+            url_imagen = request.POST.get('portada_url_temp') # Viene del input oculto
 
             if titulo and autor_id:
                 autor = Autor.objects.get(id=autor_id)
-                Libro.objects.create(
+                
+                # Creamos la instancia sin guardar en BD aún
+                libro_instancia = Libro(
                     titulo=titulo,
                     autor=autor,
                     isbn=isbn_final,
@@ -137,12 +143,34 @@ def crear_libro(request):
                     cantidad_total=cantidad,
                     disponible=True
                 )
-                messages.success(request, "¡Libro guardado exitosamente!")
+
+                # --- PROCESAMIENTO CON PILLOW ---
+                if url_imagen:
+                    try:
+                        res = requests.get(url_imagen, timeout=10)
+                        if res.status_code == 200:
+                            # Abrimos la imagen con Pillow desde la memoria
+                            img = Image.open(BytesIO(res.content))
+                            
+                            # Convertimos a RGB (por si es PNG o tiene otros formatos)
+                            if img.mode != 'RGB':
+                                img = img.convert('RGB')
+                            
+                            # Guardamos en un buffer temporal
+                            buffer = BytesIO()
+                            img.save(buffer, format='JPEG', quality=85)
+                            
+                            # Guardamos el archivo en el modelo
+                            nombre_foto = f"portada_{isbn_final}.jpg"
+                            libro_instancia.portada.save(nombre_foto, ContentFile(buffer.getvalue()), save=False)
+                    except Exception as e:
+                        print(f"Error Pillow: {e}")
+
+                libro_instancia.save() # Guardado final en la base de datos
+                messages.success(request, "¡Libro guardado con éxito!")
                 return redirect('libro_list')
 
-    # Actualizamos la lista de autores por si se creó uno nuevo en este request
     autores = Autor.objects.all()
-    
     return render(request, 'gestion/templates/templates_crear/crear_libro.html', {
         'autores': autores,
         'datos_api': datos_api
