@@ -1,88 +1,83 @@
 {% extends "index.html" %}
 {% block contenido %}
 <div class="container mt-4">
-    <h2 class="library-title">💰 {% if user.is_staff %}Gestión de Multas{% else %}Mis Multas{% endif %}</h2>
-
-    {% if user.is_staff and pendientes %}
-    <div class="alert alert-warning border-warning shadow-sm">
-        <h5>⚠️ Préstamos con Retraso Detectados (Pendientes de Sanción)</h5>
-        <table class="table table-sm align-middle">
-            <thead>
+    <h2 class="mb-4" style="font-family: 'Georgia', serif; color: #4a3728;">Historial Global de Sanciones</h2>
+    
+    <div class="table-responsive shadow-sm">
+        <table class="table table-hover align-middle" style="background-color: #fff;">
+            <thead style="background-color: #fcfaf8; border-bottom: 2px solid #eee;">
                 <tr>
-                    <th>Libro</th>
-                    <th>Usuario</th>
-                    <th>Días de retraso</th>
-                    <th>Acción</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for p in pendientes %}
-                <tr>
-                    <td>{{ p.libro.titulo }}</td>
-                    <td>{{ p.usuario.username }}</td>
-                    <td><span class="badge bg-danger">{{ p.dias_retraso }} días</span></td>
-                    <td>
-                        <a href="{% url 'crear_multa' p.id %}" class="btn btn-sm btn-dark">Procesar Multa</a>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% endif %}
-
-    <div class="library-card mt-4">
-        <h4>{% if user.is_staff %}Historial Global de Sanciones{% else %}Mi Historial de Sanciones{% endif %}</h4>
-        <table class="table table-hover align-middle">
-            <thead>
-                <tr>
-                    <th>Fecha</th>
-                    <th>Libro</th>
-                    {% if user.is_staff %}<th>Socio</th>{% endif %}
-                    <th>Motivo</th>
-                    <th>Monto</th>
-                    <th class="text-center">Estado</th>
-                    {# --- NUEVA COLUMNA SOLO PARA ADMIN --- #}
-                    {% if user.is_staff %}
-                    <th class="text-center">Acciones</th>
-                    {% endif %}
+                    <th scope="col" class="py-3">Fecha</th>
+                    <th scope="col" class="py-3">Libro</th>
+                    <th scope="col" class="py-3">Socio</th>
+                    <th scope="col" class="py-3">Motivo</th>
+                    <th scope="col" class="py-3">Monto</th>
+                    <th scope="col" class="py-3 text-center">Estado</th>
+                    <th scope="col" class="py-3 text-center">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for multa in multas %}
                 <tr>
-                    <td>{{ multa.fecha }}</td>
+                    <td class="text-muted">{{ multa.fecha|date:"j \d\e F \d\e Y" }}</td>
                     <td><strong>{{ multa.prestamo.libro.titulo }}</strong></td>
-                    {% if user.is_staff %}<td>{{ multa.prestamo.usuario.username }}</td>{% endif %}
-                    <td>{{ multa.get_tipo_multa_display }}</td>
-                    <td>${{ multa.monto }}</td>
+                    <td>{{ multa.prestamo.usuario.username }}</td>
+                    <td>
+                        {% if multa.tipo_multa == 'retraso' %}
+                            Retraso
+                        {% elif multa.tipo_multa == 'deterioro' %}
+                            Deterioro
+                        {% else %}
+                            Pérdida
+                        {% endif %}
+                    </td>
+                    <td class="fw-bold text-dark">${{ multa.monto }}</td>
                     <td class="text-center">
                         {% if multa.pagada %}
-                            <span class="badge bg-success" style="min-width: 90px;">Pagada</span>
+                            <span class="badge rounded-pill bg-success px-3">Pagada</span>
                         {% else %}
-                            <span class="badge bg-danger" style="min-width: 90px;">Pendiente</span>
+                            <span class="badge rounded-pill bg-danger px-3" style="background-color: #dc3545 !important;">Pendiente</span>
                         {% endif %}
                     </td>
-                    {# --- BOTÓN DE ACCIÓN SOLO PARA ADMIN --- #}
-                    {% if user.is_staff %}
                     <td class="text-center">
                         {% if not multa.pagada %}
-                            <a href="{% url 'pagar_multa' multa.id %}" class="btn btn-sm btn-outline-success">
-                                ✅ Marcar Pagada
+                            <a href="{% url 'pagar_multa' multa.id %}" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1">
+                                <i class="bi bi-check-square"></i> Marcar Pagada
                             </a>
                         {% else %}
-                            <span class="text-muted small">Sin acciones</span>
+                            <span class="text-muted small"><i class="bi bi-check-all"></i> Completado</span>
                         {% endif %}
                     </td>
-                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="{% if user.is_staff %}7{% else %}5{% endif %}" class="text-center py-4">No se registran multas en el sistema.</td>
+                    <td colspan="7" class="text-center py-5 text-muted">
+                        No hay sanciones registradas en el historial.
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 </div>
+
+<style>
+    .table thead th {
+        font-weight: 600;
+        color: #555;
+        text-transform: capitalize;
+    }
+    .badge {
+        font-weight: 500;
+        letter-spacing: 0.3px;
+    }
+    .btn-outline-success {
+        border-color: #198754;
+        color: #198754;
+    }
+    .btn-outline-success:hover {
+        background-color: #198754;
+        color: white;
+    }
+</style>
 {% endblock %}

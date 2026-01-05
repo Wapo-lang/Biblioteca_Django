@@ -73,49 +73,42 @@ class Prestamos(models.Model):
 
     @property
     def multa_total(self):
+        # ... (Tu lógica de cálculo) ...
         tarifa_retraso = Decimal('0.50')
         total_retraso = Decimal(self.dias_retraso) * tarifa_retraso
         return total_retraso + Decimal(self.multa_fija)
-    @property
-    def estado_real(self):
-        if self.fecha_devolucion:
-            return "Devuelto"
-        if self.fecha_max and timezone.now().date() > self.fecha_max:
-            return "En Mora / Multa"
-        return "A tiempo"
 
     def save(self, *args, **kwargs):
+        # 1. Ajuste de Fechas
         referencia = self.fecha_prestamo or timezone.now().date()
-        
         if isinstance(referencia, str):
             referencia = datetime.datetime.strptime(referencia, '%Y-%m-%d').date()
             self.fecha_prestamo = referencia 
         
-        # Autocalcular fecha máxima
         if not self.fecha_max:
             self.fecha_max = referencia + timedelta(days=2)
 
-        if not self.pk:  # Si es un préstamo nuevo
+        # 2. Lógica de Stock (SOLO al crear el préstamo nuevo)
+        if not self.pk: 
             if self.libro.ejemplares_disponibles > 0:
                 self.libro.ejemplares_disponibles -= 1
-                
                 if self.libro.ejemplares_disponibles == 0:
                     self.libro.disponible = False
-                
-                self.libro.save() # Guardamos los cambios en el libro
+                self.libro.save()
             else:
-                raise ValidationError("Este libro no tiene ejemplares disponibles en stock.")
+                raise ValidationError("Este libro no tiene ejemplares disponibles.")
 
+        # 3. Actualización de estado visual (Mora)
         if self.fecha_max and not self.fecha_devolucion:
             if timezone.now().date() > self.fecha_max:
                 self.estado = 'm' 
-
+        
         super().save(*args, **kwargs)
 
 class Multa(models.Model):
     prestamo = models.ForeignKey(Prestamos, related_name="multas", on_delete=models.PROTECT)
     tipo_multa = models.CharField(max_length=50, choices=[('retraso', 'Retraso'), ('perdida', 'Pérdida del libro'), ('deterioro', 'Deterioro del libro')])
-    monto = models.DecimalField(max_digits=3, decimal_places=2, default=0)
+    monto = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     pagada = models.BooleanField(default=False)
     fecha = models.DateField(default=timezone.now)
 
@@ -123,6 +116,7 @@ class Multa(models.Model):
         return f"Multa {self.tipo_multa} - {self.monto} - {self.prestamo}"
     
     def save(self, *args, **kwargs):
-        if self.tipo_multa == 'retraso' and self.monto == 0:
-            self.monto = self.prestamo.multa_retraso
+        # CORRECCIÓN AQUÍ: multa_retraso -> multa_total
+        if self.tipo_multa == 'retraso' and (self.monto == 0 or self.monto is None):
+            self.monto = self.prestamo.multa_total
         super().save(*args, **kwargs)

@@ -28,34 +28,44 @@ def lista_libros(request):
 def devolver_libro(request, prestamo_id):
     prestamo = get_object_or_404(Prestamos, id=prestamo_id)
     
-    # Seguridad básica
-    if not request.user.is_staff and prestamo.usuario != request.user:
-        messages.error(request, "No tienes permiso.")
+    if prestamo.fecha_devolucion:
+        messages.info(request, "Este libro ya fue marcado como devuelto.")
         return redirect('lista_prestamos')
-    
-    if prestamo.fecha_devolucion is None:
-        libro = prestamo.libro
-        
-        # --- RECUPERAR DISPONIBILIDAD ---
-        libro.ejemplares_disponibles += 1 # Sumamos el que regresa
-        libro.disponible = True           # Al haber 1 o más, ya está disponible
-        libro.save()
-        
-        prestamo.fecha_devolucion = timezone.now().date()
-        
-        # Manejo de días de retraso para el mensaje
-        retraso = prestamo.dias_retraso
-        # Convertimos a número simple para evitar el error de concatenación anterior
-        dias = retraso.days if hasattr(retraso, 'days') else retraso
 
-        if dias > 0:
-            prestamo.estado = 'm'
-            messages.warning(request, f"Devolución con retraso de {dias} días.")
+    # 3. REGISTRO DE LA DEVOLUCIÓN
+    prestamo.fecha_devolucion = timezone.now().date()
+    
+    # 4. MANEJO DE STOCK (El libro regresa a la estantería)
+    libro = prestamo.libro
+    libro.ejemplares_disponibles += 1
+    libro.disponible = True
+    libro.save()
+
+# 5. CÁLCULO DE MORA AUTOMÁTICO
+    if prestamo.dias_retraso > 0:
+        prestamo.estado = 'm'
+        
+        # Guardamos el objeto 'multa_obj' y el booleano 'created'
+        multa_obj, created = Multa.objects.get_or_create(
+            prestamo=prestamo,
+            tipo_multa='retraso',
+            defaults={
+                'monto': prestamo.multa_total, # Aquí toma el valor calculado (ej: 2.50)
+                'fecha': timezone.now().date()
+            }
+        )
+        
+        # MEJORA: Mostramos el monto exacto en el mensaje
+        if created:
+            messages.warning(request, f"Devolución con retraso. Multa generada de ${multa_obj.monto}.")
         else:
-            prestamo.estado = 'd'
-            messages.success(request, f"Libro '{libro.titulo}' devuelto correctamente.")
-            
-        prestamo.save()
+            messages.info(request, f"Devolución con retraso. Ya existía una multa de ${multa_obj.monto}.")
+    else:
+        prestamo.estado = 'd'  # Estado: Devuelto
+        messages.success(request, f"Libro '{libro.titulo}' devuelto correctamente y a tiempo.")
+
+    # 6. GUARDAR EL PRÉSTAMO ACTUALIZADO
+    prestamo.save()
     
     return redirect('lista_prestamos')
 
@@ -249,7 +259,15 @@ def pagar_multa(request, multa_id):
     multa = get_object_or_404(Multa, id=multa_id)
     multa.pagada = True
     multa.save()
-    messages.success(request, f"La multa de {multa.prestamo.usuario.username} ha sido marcada como pagada.")
+
+    prestamo = multa.prestamo
+    multas_pendientes = Multa.objects.filter(prestamo=prestamo, pagada=False).exists()
+    
+    if not multas_pendientes:
+        prestamo.estado = 'd'
+        prestamo.save()
+
+    messages.success(request, f"Multa de {prestamo.usuario.username} pagada. Estado actualizado.")
     return redirect('lista_multas')
 
 @login_required
@@ -260,41 +278,58 @@ def crear_multa(request, prestamo_id):
     if request.method == 'POST':
         tipo = request.POST.get('tipo_multa')
         
-        montos = {
-            'retraso': 1.00,
-            'deterioro': 5.00,
-            'perdida': 9.00, 
-        }
-        monto_sancion = montos.get(tipo, 2.00)
+        # --- CAMBIO AQUÍ: Lógica de montos dinámica ---
+        if tipo == 'retraso':
+            # Usamos el cálculo automático de tu modelo
+            monto_sancion = prestamo.multa_total 
+        else:
+            # Para los demás casos, usamos valores fijos
+            montos_fijos = {
+                'deterioro': 5.00,
+                'perdida': 9.00, 
+            }
+            monto_sancion = montos_fijos.get(tipo, 2.00)
+        # ----------------------------------------------
 
-        # Crear la multa
-        Multa.objects.create(
+        # Usar get_or_create para evitar duplicar multas del mismo tipo
+        multa, creada = Multa.objects.get_or_create(
             prestamo=prestamo,
             tipo_multa=tipo,
-            monto=monto_sancion,
-            fecha=timezone.now()
+            defaults={
+                'monto': monto_sancion,
+                'fecha': timezone.now()
+            }
         )
+
+        if not creada:
+            messages.info(request, f"Ya existía una multa por {tipo} para este préstamo.")
+            return redirect('lista_multas')
 
         # Lógica de Stock
         if tipo == 'perdida':
-            prestamo.libro.cantidad_total -= 1
-            # Si ya no quedan libros, asegurar disponible=False
-            if prestamo.libro.cantidad_total <= 0:
-                prestamo.libro.disponible = False
+            if prestamo.libro.cantidad_total > 0:
+                prestamo.libro.cantidad_total -= 1
             prestamo.libro.save()
-        else:
-            prestamo.libro.disponible = True
-            prestamo.libro.save()
+            prestamo.estado = 'm' 
+        
+        elif tipo == 'deterioro' or tipo == 'retraso':
+             # En ambos casos el libro regresa al inventario
+             if not prestamo.fecha_devolucion: # Solo si no se había devuelto ya
+                 prestamo.libro.ejemplares_disponibles += 1
+                 prestamo.libro.disponible = True
+                 prestamo.libro.save()
+             prestamo.estado = 'm'
 
-        # Finalizar préstamo y cambiar estado a 'd' (devuelto) o lo que uses
-        prestamo.fecha_devolucion = timezone.now().date()
-        prestamo.estado = 'd' 
+        # Cerramos el ciclo del préstamo
+        if not prestamo.fecha_devolucion:
+            prestamo.fecha_devolucion = timezone.now().date()
+        
         prestamo.save()
 
-        messages.success(request, "Multa registrada y libro devuelto.")
-        return redirect('lista_multas') # Asegúrate que este nombre coincida con tus URLs
+        messages.success(request, f"Multa por {tipo} registrada por ${monto_sancion}.")
+        return redirect('lista_multas') 
 
-    return render(request, 'templates_crear/crear_multa.html', {'prestamo': prestamo})
+    return render(request, 'gestion/templates/templates_crear/crear_multa.html', {'prestamo': prestamo})
 
 def registro(request):
     if request.method == 'POST':
