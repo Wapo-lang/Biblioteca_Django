@@ -2,163 +2,217 @@
 {% block contenido %}
 
 <style>
-    /* Estilo del título de sección */
+    /* Tipografía y Títulos */
     .titulo-seccion {
-        font-size: 32px;
-        font-weight: 800;
-        color: #5a3c22;
+        font-family: 'Playfair Display', serif;
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: #3d2b1f;
         text-align: center;
-        letter-spacing: 1px;
-        margin-bottom: 25px;
-        text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        margin-bottom: 40px;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 15px;
     }
 
-    /* Tarjetas estilo biblioteca */
+    /* Adorno lineal a los lados del título */
+    .titulo-seccion::before, .titulo-seccion::after {
+        content: "";
+        height: 2px;
+        width: 60px;
+        background: #a67c52;
+        display: inline-block;
+    }
+
+    /* Tarjetas Mejoradas */
     .card-custom {
-        background: #fffdf7;
-        border: 2px solid #c9a77c;
-        border-radius: 15px;
-        box-shadow: 0 5px 18px rgba(0,0,0,0.15);
-        transition: 0.25s ease;
-        padding: 10px;
-        color: #4a3a28;
+        background: #ffffff;
+        border: 1px solid #e2d1c3;
+        border-radius: 20px;
+        box-shadow: 0 8px 25px rgba(0,0,0,0.05);
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        padding: 15px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        position: relative;
+        overflow: hidden;
+    }
+
+    /* Decoración de esquina en la tarjeta */
+    .card-custom::after {
+        content: "❧";
+        position: absolute;
+        bottom: 5px;
+        right: 15px;
+        color: #e2d1c3;
+        font-size: 1.5rem;
+        opacity: 0.5;
     }
 
     .card-custom:hover {
-        transform: translateY(-6px);
-        box-shadow: 0 10px 28px rgba(0,0,0,0.25);
-        border-color: #b08968;
+        transform: translateY(-10px);
+        box-shadow: 0 15px 35px rgba(80, 55, 35, 0.15);
+        border-color: #8b5e34;
+    }
+
+    .icon-box {
+        font-size: 2.5rem;
+        color: #8b5e34;
+        margin-bottom: 15px;
+        display: block;
+        text-align: center;
     }
 
     .card-title {
-        color: #7a5230;
-        font-weight: bold;
-        font-size: 22px;
+        color: #5c422e;
+        font-family: 'Playfair Display', serif;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 10px;
     }
 
     .card-text {
-        color: #4f4435;
+        color: #7d6e5d;
+        text-align: center;
+        font-size: 0.95rem;
+        margin-bottom: 20px;
+        line-height: 1.4;
     }
 
-    /* Botones estilo cálido */
-    .btn-primary {
-        background: #7a5230;
+    /* Botones Estilizados */
+    .btn-action {
+        border-radius: 12px;
+        padding: 10px 20px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        font-size: 0.8rem;
+        transition: 0.3s;
         border: none;
-        color: #f8e8c8 !important;
-        font-weight: bold;
     }
 
-    .btn-primary:hover {
-        background: #5a3c22;
-        color: #fff3d1 !important;
+    .btn-add {
+        background: #5c422e;
+        color: #f4eee0 !important;
     }
 
-    .btn-secondary {
-        background: #b08968;
-        border: none;
-        font-weight: bold;
-        color: #fff;
+    .btn-add:hover {
+        background: #3d2b1f;
+        transform: scale(1.02);
     }
 
-    .btn-secondary:hover {
-        background: #8f6d4c;
+    .btn-view {
+        background: #f8f4f0;
+        color: #5c422e !important;
+        border: 1px solid #e2d1c3;
+    }
+
+    .btn-view:hover {
+        background: #e2d1c3;
+        border-color: #8b5e34;
+    }
+
+    /* Separador de secciones */
+    hr.divider {
+        border: 0;
+        height: 1px;
+        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(166, 124, 82, 0.75), rgba(0, 0, 0, 0));
+        margin: 60px 0;
     }
 </style>
 
-<div class="container py-5">
+<div class="container py-5 animate__animated animate__fadeIn">
 
-    <!-- Sección Libros -->
-    <section id="libros" class="mb-5">
-        <h2 class="titulo-seccion">📘 LIBROS</h2>
-
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-4">
+    <section id="libros">
+        <h2 class="titulo-seccion"> Gestión de Libros</h2>
+        <div class="row g-4">
+            <div class="col-md-6 col-lg-4 offset-lg-2">
                 <div class="card card-custom">
                     <div class="card-body">
-                        <h5 class="card-title">Agregar Libro</h5>
-                        <p class="card-text">Registra nuevos libros en el catálogo.</p>
-                        <a href="{% url 'crear_libro' %}" class="btn btn-primary w-100">Agregar</a>
+                        <span class="icon-box"><i class="fas fa-plus-circle"></i></span>
+                        <h5 class="card-title">Adquisición</h5>
+                        <p class="card-text">Registra nuevos ejemplares físicamente en la colección del archivo.</p>
+                        <a href="{% url 'crear_libro' %}" class="btn btn-action btn-add w-100">Agregar Libro</a>
                     </div>
                 </div>
             </div>
-
-            <div class="col-md-4">
+            <div class="col-md-6 col-lg-4">
                 <div class="card card-custom">
                     <div class="card-body">
-                        <h5 class="card-title">Lista de Libros</h5>
-                        <p class="card-text">Consulta todos los libros registrados.</p>
-                        <a href="{% url 'libro_list' %}" class="btn btn-secondary w-100">Ver Lista</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Sección Autores -->
-    <section id="autores" class="mb-5">
-        <h2 class="titulo-seccion">✍️ AUTORES</h2>
-
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-4">
-                <div class="card card-custom">
-                    <div class="card-body">
-                        <h5 class="card-title">Agregar Autor</h5>
-                        <p class="card-text">Añade información de nuevos autores.</p>
-                        <a href="{% url 'crear_autor' %}" class="btn btn-primary w-100">Agregar</a>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card card-custom">
-                    <div class="card-body">
-                        <h5 class="card-title">Lista de Autores</h5>
-                        <p class="card-text">Consulta todos los autores registrados.</p>
-                        <a href="{% url 'lista_autores' %}" class="btn btn-secondary w-100">Ver Lista</a>
+                        <span class="icon-box"><i class="fas fa-book-open"></i></span>
+                        <h5 class="card-title">Explorar Catálogo</h5>
+                        <p class="card-text">Visualiza, edita o busca dentro de la base de datos de obras.</p>
+                        <a href="{% url 'libro_list' %}" class="btn btn-action btn-view w-100">Ver Inventario</a>
                     </div>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Sección Préstamos -->
-    <section id="prestamos" class="mb-5">
-        <h2 class="titulo-seccion">📗 PRÉSTAMOS</h2>
+    <hr class="divider">
 
-        <div class="row g-4 justify-content-center">
-            <div class="col-md-4">
-                <div class="card card-custom">
-                    <div class="card-body">
-                        <h5 class="card-title">Registrar Préstamo</h5>
-                        <p class="card-text">Controla la salida de libros.</p>
-                        <a href="{% url 'crear_prestamo' %}" class="btn btn-primary w-100">Registrar</a>
+    <div class="row">
+        <div class="col-lg-6">
+            <h2 class="titulo-seccion" style="font-size: 1.8rem;"> Autores</h2>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="card card-custom">
+                        <div class="card-body">
+                            <h6 class="card-title">Nuevo Autor</h6>
+                            <a href="{% url 'crear_autor' %}" class="btn btn-action btn-add w-100">Registrar</a>
+                        </div>
                     </div>
                 </div>
-            </div>
-
-            <div class="col-md-4">
-                <div class="card card-custom">
-                    <div class="card-body">
-                        <h5 class="card-title">Historial de Préstamos</h5>
-                        <p class="card-text">Consulta los préstamos realizados.</p>
-                        <a href="{% url 'lista_prestamos' %}" class="btn btn-secondary w-100">Ver Historial</a>
+                <div class="col-sm-6">
+                    <div class="card card-custom">
+                        <div class="card-body">
+                            <h6 class="card-title">Directorio</h6>
+                            <a href="{% url 'lista_autores' %}" class="btn btn-action btn-view w-100">Consultar</a>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
-    </section>
 
-    <!-- Sección Multas -->
-    <section id="multas" class="mb-5">
-        <h2 class="titulo-seccion">💰 MULTAS</h2>
+        <div class="col-lg-6 mt-5 mt-lg-0">
+            <h2 class="titulo-seccion" style="font-size: 1.8rem;"> Circulación</h2>
+            <div class="row g-3">
+                <div class="col-sm-6">
+                    <div class="card card-custom">
+                        <div class="card-body">
+                            <h6 class="card-title">Nuevo Préstamo</h6>
+                            <a href="{% url 'crear_prestamo' %}" class="btn btn-action btn-add w-100">Prestar</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-6">
+                    <div class="card card-custom">
+                        <div class="card-body">
+                            <h6 class="card-title">Historial</h6>
+                            <a href="{% url 'lista_prestamos' %}" class="btn btn-action btn-view w-100">Revisar</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-        <div class="row g-4 justify-content-center">
+    <hr class="divider">
+
+    <section id="admin" class="pb-5">
+        <h2 class="titulo-seccion" style="font-size: 1.8rem;"> Administración</h2>
+        <div class="row justify-content-center">
             <div class="col-md-4">
-                <div class="card card-custom">
+                <div class="card card-custom" style="border-style: dashed;">
                     <div class="card-body">
-                        <h5 class="card-title">Lista de Multas</h5>
-                        <p class="card-text">Consulta multas activas.</p>
-                        <a href="{% url 'lista_multas' %}" class="btn btn-secondary w-100">Ver Lista</a>
+                        <span class="icon-box" style="color: #c62828;"><i class="fas fa-hand-holding-usd"></i></span>
+                        <h5 class="card-title">Gestión de Multas</h5>
+                        <p class="card-text text-danger small">Supervisión de sanciones por retrasos en devoluciones.</p>
+                        <a href="{% url 'lista_multas' %}" class="btn btn-outline-danger btn-action w-100">Ver Multas</a>
                     </div>
                 </div>
             </div>

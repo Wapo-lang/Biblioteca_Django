@@ -2,115 +2,170 @@
 {% block contenido %}
 
 <style>
-    /* Mantenemos tus estilos originales */
+    /* Tipografía y Fondo General */
+    body {
+        background-color: #f8f4f0; /* Color papel antiguo suave */
+    }
+
     .library-title {
-        color: #5a3825;
-        font-weight: bold;
-        text-shadow: 1px 1px #d6c1a5;
+        color: #4a3427;
+        font-family: 'Garamond', 'Georgia', serif;
+        font-weight: 800;
+        letter-spacing: -1px;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
     }
 
+    /* Tarjeta Principal */
     .library-card {
-        background: #fff9f1;
-        border: 2px solid #d4b894;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(80, 55, 35, 0.25);
-        padding: 20px;
+        background: #ffffff;
+        border: 1px solid #e2d1c3;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(80, 55, 35, 0.08);
+        padding: 30px;
         position: relative;
+        overflow: hidden;
     }
 
+    /* Decoración de madera superior más estilizada */
     .library-card::before {
         content: "";
         width: 100%;
-        height: 12px;
+        height: 6px;
         position: absolute;
         top: 0; left: 0;
-        border-top-left-radius: 10px;
-        border-top-right-radius: 10px;
-        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
+        background: linear-gradient(90deg, #5c422e, #8b5e34, #5c422e);
     }
 
-    /* ESTILOS PARA LA PORTADA (PILLOW) */
+    /* Estilos de la Tabla */
+    .table {
+        border-collapse: separate;
+        border-spacing: 0 12px; /* Espaciado entre filas para efecto tarjeta */
+    }
+
+    .table thead th {
+        border: none;
+        color: #8b5e34;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        padding-bottom: 20px;
+    }
+
+    .table tbody tr {
+        background: #fffdfb;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+    }
+
+    .table tbody tr:hover {
+        background: #fff9f1 !important;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(80, 55, 35, 0.1);
+    }
+
+    .table td {
+        padding: 15px !important;
+        border: none !important;
+        vertical-align: middle;
+    }
+
+    .table td:first-child { border-radius: 10px 0 0 10px; }
+    .table td:last-child { border-radius: 0 10px 10px 0; }
+
+    /* Portadas con Pillow */
     .book-thumbnail {
-        width: 45px;
-        height: 65px;
+        width: 50px;
+        height: 75px;
         object-fit: cover;
-        border-radius: 4px;
-        border: 1px solid #8b5e34;
-        transition: transform 0.3s ease;
-        cursor: zoom-in;
+        border-radius: 6px;
+        box-shadow: 2px 4px 8px rgba(0,0,0,0.15);
+        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     }
 
     .book-thumbnail:hover {
-        transform: scale(3.5); /* Efecto lupa */
-        position: relative;
-        z-index: 50;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        transform: scale(2.5) translateX(20px);
+        z-index: 100;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
     }
 
     .no-cover-placeholder {
-        width: 45px;
-        height: 65px;
-        background: #e9e0d2;
-        border: 1px dashed #d4b894;
+        width: 50px;
+        height: 75px;
+        background: #f1ede4;
+        border: 2px dashed #dcd3c1;
+        border-radius: 6px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 0.6rem;
-        color: #8b5e34;
-        text-align: center;
+        color: #a48d71;
     }
 
-    /* Estilos para la paginación elegante */
-    .pagination-container {
-        display: flex;
+    /* Acciones - Iconos más elegantes */
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
         justify-content: center;
-        gap: 10px;
-        margin-top: 25px;
+        width: 35px;
+        height: 35px;
+        border-radius: 8px;
+        background: #fdfaf6;
+        border: 1px solid #eee4da;
+        transition: 0.2s;
+        text-decoration: none !important;
+        margin: 0 2px;
     }
 
+    .action-btn:hover {
+        transform: scale(1.1);
+        background: #fff;
+    }
+
+    /* Paginación */
     .btn-page {
-        background: #8b5e34;
-        color: white;
-        border: none;
-        padding: 6px 14px;
-        border-radius: 6px;
+        background: #fff;
+        color: #5c422e;
+        border: 1px solid #e2d1c3;
+        padding: 8px 16px;
+        border-radius: 10px;
         text-decoration: none;
-        font-weight: bold;
+        font-weight: 600;
         transition: 0.3s;
-        font-size: 0.9rem;
     }
 
     .btn-page:hover {
-        background: #5c422e;
-        color: #f8e8c8;
-        transform: translateY(-2px);
+        background: #8b5e34;
+        color: white;
+        border-color: #8b5e34;
     }
 
     .page-current {
-        font-weight: bold;
-        color: #5a3825;
-        align-self: center;
-        font-family: "Georgia", serif;
+        font-family: 'Georgia', serif;
+        font-style: italic;
+        color: #8b5e34;
     }
 </style>
 
-<div class="container mt-4 animate__animated animate__fadeIn">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="library-title m-0">📚 Catálogo de Obras</h2>
-        <a href="{% url 'crear_libro' %}" class="btn btn-primary shadow-sm">
-            + Añadir Nuevo Libro
+<div class="container mt-5 animate__animated animate__fadeIn">
+    <div class="d-flex justify-content-between align-items-end mb-4 px-2">
+        <div>
+            <h2 class="library-title m-0">Catálogo de Obras</h2>
+            <p class="text-muted small mb-0">Gestión de acervo bibliográfico local</p>
+        </div>
+        <a href="{% url 'crear_libro' %}" class="btn btn-dark shadow-sm px-4" style="background: #2c1e16; border: none; border-radius: 10px;">
+            <i class="fas fa-plus me-2"></i> Nuevo Libro
         </a>
     </div>
 
     <div class="library-card">
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table align-middle">
                 <thead>
                     <tr>
-                        <th style="width: 60px;">Obra</th> <th>Título de la Obra</th>
+                        <th style="width: 80px;">Portada</th>
+                        <th>Información del Libro</th>
                         <th>Autor</th>
-                        <th class="text-center">Disponibilidad</th>
-                        <th class="text-center">Acciones</th>
+                        <th class="text-center">Estado</th>
+                        <th class="text-center">Gestión</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -118,46 +173,51 @@
                     <tr>
                         <td>
                             {% if libro.portada %}
-                                <img src="{{ libro.portada.url }}" class="book-thumbnail" alt="Portada de {{ libro.titulo }}">
+                                <img src="{{ libro.portada.url }}" class="book-thumbnail" alt="Portada">
                             {% else %}
                                 <div class="no-cover-placeholder">
-                                    <span>Sin<br>Foto</span>
+                                    <i class="fas fa-book" style="font-size: 1.2rem;"></i>
                                 </div>
                             {% endif %}
                         </td>
 
-                        <td><strong>{{ libro.titulo }}</strong></td>
-                        <td>{{ libro.autor.nombre }} {{ libro.autor.apellido }}</td>
+                        <td>
+                            <div class="fw-bold text-dark" style="font-size: 1.05rem;">{{ libro.titulo }}</div>
+                            <div class="text-muted x-small" style="font-size: 0.8rem;">ISBN: {{ libro.isbn|default:"N/A" }}</div>
+                        </td>
+
+                        <td>
+                            <span class="text-secondary"><i class="far fa-user me-1"></i> {{ libro.autor.nombre }} {{ libro.autor.apellido }}</span>
+                        </td>
                         
                         <td class="text-center">
                             {% if libro.ejemplares_disponibles > 0 %}
-                                <div class="mb-1">
-                                    <span class="badge rounded-pill bg-success" style="font-size: 0.85rem;">✅ Disponible</span>
-                                </div>
-                                <small class="text-muted">{{ libro.ejemplares_disponibles }} de {{ libro.cantidad_total }}</small>
+                                <span class="badge" style="background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;">
+                                    ● Disponible
+                                </span>
+                                <div class="text-muted mt-1" style="font-size: 0.7rem;">{{ libro.ejemplares_disponibles }} en estante</div>
                             {% else %}
-                                <div class="mb-1">
-                                    <span class="badge rounded-pill bg-danger" style="font-size: 0.85rem;">❌ Agotado</span>
-                                </div>
-                                <small class="text-muted">Sin ejemplares</small>
+                                <span class="badge" style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2;">
+                                    ● Agotado
+                                </span>
                             {% endif %}
                         </td>
 
                         <td class="text-center">
-                            <a href="{% url 'libro_detalle' libro.pk %}" class="text-primary me-2" title="Ver detalle" style="text-decoration: none;">🔍</a>
+                            <a href="{% url 'libro_detalle' libro.pk %}" class="action-btn text-primary" title="Ver detalle">🔍</a>
 
                             {% if libro.ejemplares_disponibles > 0 %}
-                                <a href="{% url 'crear_prestamo' %}?libro_id={{ libro.id }}" class="text-success me-2" title="Prestar ahora" style="text-decoration: none;">📚</a>
+                                <a href="{% url 'crear_prestamo' %}?libro_id={{ libro.id }}" class="action-btn text-success" title="Prestar">📖</a>
                             {% else %}
-                                <span class="text-muted me-2" title="Sin stock" style="cursor: not-allowed;">📚</span>
+                                <span class="action-btn text-muted" style="opacity: 0.5; cursor: not-allowed;">📖</span>
                             {% endif %}
 
                             {% if perms.Gestion.change_libro %}
-                                <a href="{% url 'libro_editar' libro.pk %}" class="text-warning me-2" title="Editar" style="text-decoration: none;">✏️</a>
+                                <a href="{% url 'libro_editar' libro.pk %}" class="action-btn text-warning" title="Editar">✏️</a>
                             {% endif %}
 
                             {% if perms.Gestion.delete_libro %}
-                                <a href="{% url 'libro_eliminar' libro.pk %}" class="text-danger" title="Eliminar" style="text-decoration: none;">🗑️</a>
+                                <a href="{% url 'libro_eliminar' libro.pk %}" class="action-btn text-danger" title="Eliminar">🗑️</a>
                             {% endif %}
                         </td>
                     </tr>
@@ -168,19 +228,19 @@
     </div>
 
     {% if is_paginated %}
-    <nav class="pagination-container animate__animated animate__fadeInUp">
+    <nav class="pagination-container py-4">
         {% if page_obj.has_previous %}
-            <a href="?page=1" class="btn-page">« Primera</a>
+            <a href="?page=1" class="btn-page">«</a>
             <a href="?page={{ page_obj.previous_page_number }}" class="btn-page">Anterior</a>
         {% endif %}
 
-        <span class="page-current">
-            Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+        <span class="page-current mx-3">
+            {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
         </span>
 
         {% if page_obj.has_next %}
             <a href="?page={{ page_obj.next_page_number }}" class="btn-page">Siguiente</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-page">Última »</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-page">»</a>
         {% endif %}
     </nav>
     {% endif %}
