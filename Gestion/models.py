@@ -58,12 +58,6 @@ class Prestamos(models.Model):
     tipo_multa = models.CharField(max_length=10, choices=TIPOS_MULTA, default='retraso')
     multa_fija = models.DecimalField(max_digits=6, decimal_places=2, default=0.00) # Odoo: multa
 
-    class Meta:
-        permissions = (
-            ("Ver_prestamos", "Puede ver préstamos"),
-            ("Gestionar_prestamos", "Puede gestionar préstamos"),
-        )
-
     @property
     def dias_retraso(self):
         hoy = timezone.now().date()

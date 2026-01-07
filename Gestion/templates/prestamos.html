@@ -31,7 +31,6 @@
         color: #4a372a;
     }
 
-    /* Estilo para los botones de acción */
     .btn-action {
         padding: 4px 8px;
         font-size: 0.85rem;
@@ -41,7 +40,13 @@
 </style>
 
 <div class="container mt-4 animate__animated animate__fadeIn">
-    <h2 class="text-center mb-4 library-title">📋 Gestión de Préstamos</h2>
+    <h2 class="text-center mb-4 library-title">
+        {% if user.groups.all.0.name == 'Cliente' %}
+            📖 Mi Historial de Préstamos
+        {% else %}
+            📋 Gestión Global de Préstamos
+        {% endif %}
+    </h2>
 
     <div class="library-card">
         <div class="table-responsive">
@@ -49,7 +54,7 @@
                 <thead>
                     <tr>
                         <th>Libro</th>
-                        {% if user.is_staff %}
+                        {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
                             <th>Socio/Usuario</th>
                         {% endif %}
                         <th>Estado</th>
@@ -60,9 +65,11 @@
                     {% for prestamo in prestamos %}
                     <tr class="animate__animated animate__fadeInUp" style="animation-delay: {{ forloop.counter0 }}0ms;">
                         <td><strong>{{ prestamo.libro.titulo }}</strong></td>
-                        {% if user.is_staff %}
+                        
+                        {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
                             <td><i class="bi bi-person"></i> {{ prestamo.usuario.username }}</td>
                         {% endif %}
+                        
                         <td>
                             {% if prestamo.estado == 'p' %}
                                 <span class="badge bg-info text-dark">Prestado</span>
@@ -72,24 +79,33 @@
                                 <span class="badge bg-success">Devuelto</span>
                             {% endif %}
                         </td>
+
                         <td class="text-center">
                             <div class="d-flex justify-content-center gap-2">
-                                {% if not prestamo.fecha_devolucion %}
-                                    <a href="{% url 'devolver_libro' prestamo.id %}" class="btn btn-warning btn-action shadow-sm" title="Registrar Devolución">
-                                        ↩️ Devolver
-                                    </a>
+                                {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
+                                    {% if not prestamo.fecha_devolucion %}
+                                        <a href="{% url 'devolver_libro' prestamo.id %}" class="btn btn-warning btn-action shadow-sm" title="Registrar Devolución">
+                                            ↩️ Devolver
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
                                 
-                                {% if user.is_staff and prestamo.estado == 'm' %}
-                                    <a href="{% url 'crear_multa' prestamo.id %}" class="btn btn-dark btn-action shadow-sm" title="Generar Multa">
-                                        ⚖️ Sancionar
-                                    </a>
+                                {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
+                                    {% if prestamo.estado == 'm' %}
+                                        <a href="{% url 'crear_multa' prestamo.id %}" class="btn btn-dark btn-action shadow-sm" title="Generar Multa">
+                                            ⚖️ Sancionar
+                                        </a>
+                                    {% endif %}
                                 {% endif %}
 
-                                {% if user.is_staff %}
+                                {% if user.is_superuser or user.groups.all.0.name == 'Administrador' %}
                                     <a href="{% url 'eliminar_prestamo' prestamo.pk %}" class="btn btn-outline-danger btn-action" title="Eliminar Registro">
                                         🗑️
                                     </a>
+                                {% endif %}
+
+                                {% if user.groups.all.0.name == 'Cliente' %}
+                                    <span class="text-muted small italic">Sin acciones disponibles</span>
                                 {% endif %}
                             </div>
                         </td>

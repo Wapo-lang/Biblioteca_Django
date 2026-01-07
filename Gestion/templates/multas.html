@@ -1,7 +1,13 @@
 {% extends "index.html" %}
 {% block contenido %}
 <div class="container mt-4">
-    <h2 class="mb-4" style="font-family: 'Georgia', serif; color: #4a3728;">Historial Global de Sanciones</h2>
+    <h2 class="mb-4" style="font-family: 'Georgia', serif; color: #4a3728;">
+        {% if user.groups.all.0.name == 'Cliente' %}
+            Mis Sanciones Pendientes
+        {% else %}
+            Historial Global de Sanciones
+        {% endif %}
+    </h2>
     
     <div class="table-responsive shadow-sm">
         <table class="table table-hover align-middle" style="background-color: #fff;">
@@ -9,11 +15,18 @@
                 <tr>
                     <th scope="col" class="py-3">Fecha</th>
                     <th scope="col" class="py-3">Libro</th>
-                    <th scope="col" class="py-3">Socio</th>
+                    
+                    {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
+                        <th scope="col" class="py-3">Socio</th>
+                    {% endif %}
+                    
                     <th scope="col" class="py-3">Motivo</th>
                     <th scope="col" class="py-3">Monto</th>
                     <th scope="col" class="py-3 text-center">Estado</th>
-                    <th scope="col" class="py-3 text-center">Acciones</th>
+                    
+                    {% if user.groups.all.0.name != 'Cliente' %}
+                        <th scope="col" class="py-3 text-center">Acciones</th>
+                    {% endif %}
                 </tr>
             </thead>
             <tbody>
@@ -21,7 +34,11 @@
                 <tr>
                     <td class="text-muted">{{ multa.fecha|date:"j \d\e F \d\e Y" }}</td>
                     <td><strong>{{ multa.prestamo.libro.titulo }}</strong></td>
-                    <td>{{ multa.prestamo.usuario.username }}</td>
+                    
+                    {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
+                        <td>{{ multa.prestamo.usuario.username }}</td>
+                    {% endif %}
+                    
                     <td>
                         {% if multa.tipo_multa == 'retraso' %}
                             Retraso
@@ -39,6 +56,8 @@
                             <span class="badge rounded-pill bg-danger px-3" style="background-color: #dc3545 !important;">Pendiente</span>
                         {% endif %}
                     </td>
+                    
+                    {% if user.groups.all.0.name != 'Cliente' %}
                     <td class="text-center">
                         {% if not multa.pagada %}
                             <a href="{% url 'pagar_multa' multa.id %}" class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1">
@@ -48,6 +67,7 @@
                             <span class="text-muted small"><i class="bi bi-check-all"></i> Completado</span>
                         {% endif %}
                     </td>
+                    {% endif %}
                 </tr>
                 {% empty %}
                 <tr>

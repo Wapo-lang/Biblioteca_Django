@@ -3,156 +3,303 @@
 {% block contenido %}
 
 <style>
-/* ===== ANIMACIONES ===== */
-@keyframes fadeSlideUp {
-    from {
-        opacity: 0;
-        transform: translateY(40px) scale(0.96);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }
-}
-
-@keyframes glow {
-    0% { box-shadow: 0 0 0 rgba(139,94,52,0.3); }
-    50% { box-shadow: 0 0 16px rgba(139,94,52,0.6); }
-    100% { box-shadow: 0 0 0 rgba(139,94,52,0.3); }
-}
-
-@keyframes shake {
-    0% { transform: translateX(0); }
-    25% { transform: translateX(-6px); }
-    50% { transform: translateX(6px); }
-    75% { transform: translateX(-4px); }
-    100% { transform: translateX(0); }
-}
-
-/* ===== CONTENEDOR ===== */
-.login-container {
-    max-width: 420px;
-    margin: 70px auto;
-    background: #fffaf2;
-    border: 2px solid #d4b894;
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 12px 30px rgba(80, 55, 35, 0.35);
-    font-family: "Georgia", serif;
-    color: #4a372a;
+/* ===== AMBIENTE Y FONDO ===== */
+.login-wrapper {
     position: relative;
-    animation: fadeSlideUp 0.9s ease;
+    min-height: 80vh; /* Ocupa buena parte de la pantalla */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    perspective: 1000px; /* Clave para el efecto 3D */
 }
 
-.login-container::before {
-    content: "";
-    height: 10px;
-    width: 100%;
-    background: linear-gradient(90deg, #8b5e34, #b07c4a, #8b5e34);
+/* Partículas de polvo flotando (Atmósfera) */
+.dust-particle {
     position: absolute;
-    top: 0;
-    left: 0;
-    border-radius: 16px 16px 0 0;
+    background: rgba(166, 124, 82, 0.4);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: floatDust linear infinite;
 }
 
-/* ===== TITULO ===== */
-.login-title {
+@keyframes floatDust {
+    0% { transform: translateY(0) translateX(0) rotate(0deg); opacity: 0; }
+    50% { opacity: 0.8; }
+    100% { transform: translateY(-100px) translateX(50px) rotate(180deg); opacity: 0; }
+}
+
+/* ===== TARJETA PRINCIPAL (El Libro Mágico) ===== */
+.login-card-3d {
+    width: 400px;
+    background: rgba(255, 250, 240, 0.95); /* Color papiro */
+    padding: 40px;
+    border-radius: 15px;
+    /* Doble borde para efecto de encuadernación */
+    box-shadow: 
+        0 0 0 5px rgba(92, 64, 51, 0.1), /* Borde interno sutil */
+        0 20px 50px rgba(0,0,0,0.3); /* Sombra profunda */
+    border: 1px solid rgba(139, 94, 52, 0.3);
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.1s ease-out; /* Suaviza el movimiento del mouse */
+    backdrop-filter: blur(5px);
+}
+
+/* Elementos flotantes dentro de la tarjeta (Parallax) */
+.floating-content {
+    transform: translateZ(30px); /* Hace que el texto flote sobre la tarjeta */
+}
+
+/* ===== CABECERA ===== */
+.login-header {
     text-align: center;
-    margin-bottom: 25px;
-    font-weight: bold;
-    color: #5a3825;
-    letter-spacing: 1px;
+    margin-bottom: 35px;
+    position: relative;
 }
 
-/* ===== INPUTS ===== */
-.form-label {
-    font-weight: bold;
-    margin-top: 12px;
+.icon-lock-wrapper {
+    width: 70px;
+    height: 70px;
+    background: linear-gradient(135deg, #8b5e34, #5c4033);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    box-shadow: 0 10px 20px rgba(139, 94, 52, 0.4);
+    border: 3px solid #e2d1c3;
+    animation: pulseGlow 3s infinite;
 }
 
-.form-control {
-    background: #fffdf7;
-    border: 1px solid #c5a886;
-    border-radius: 10px;
-    padding: 12px;
-    font-size: 15px;
-    transition: all 0.3s ease;
-}
-
-.form-control:focus {
-    border-color: #8b5e34;
-    box-shadow: 0 0 10px rgba(139,94,52,0.35);
-    transform: translateY(-2px);
-}
-
-/* ===== BOTON ===== */
-.btn-login {
-    background: linear-gradient(135deg, #8b5e34, #6d4828);
+.icon-lock {
+    font-size: 1.8rem;
     color: #fff;
-    width: 100%;
-    padding: 12px;
-    margin-top: 22px;
-    font-weight: bold;
-    border-radius: 10px;
-    border: none;
+    transition: 0.3s;
+}
+
+.login-title {
+    font-family: 'Playfair Display', serif;
+    color: #3d2b1f;
+    font-weight: 800;
+    font-size: 1.8rem;
     letter-spacing: 1px;
-    transition: all 0.35s ease;
+}
+
+/* ===== INPUTS "TINTA MÁGICA" ===== */
+.input-group-magic {
+    position: relative;
+    margin-bottom: 30px;
+}
+
+.input-magic {
+    width: 100%;
+    padding: 10px 0;
+    font-size: 16px;
+    color: #3d2b1f;
+    border: none;
+    border-bottom: 2px solid #d4b894;
+    outline: none;
+    background: transparent;
+    transition: 0.3s;
+    font-family: 'EB Garamond', serif;
+    font-weight: 600;
+}
+
+/* La etiqueta que flota */
+.label-magic {
+    position: absolute;
+    top: 10px;
+    left: 0;
+    color: #8c7a6b;
+    font-size: 16px;
+    pointer-events: none;
+    transition: 0.3s ease all;
+    font-family: sans-serif;
+}
+
+/* Animación al hacer foco */
+.input-magic:focus ~ .label-magic,
+.input-magic:valid ~ .label-magic {
+    top: -20px;
+    font-size: 12px;
+    color: #8b5e34;
+    font-weight: bold;
+}
+
+/* La línea que se dibuja */
+.magic-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 2px;
+    background: #8b5e34;
+    transition: 0.4s ease-in-out;
+}
+
+.input-magic:focus ~ .magic-line,
+.input-magic:valid ~ .magic-line {
+    width: 100%;
+}
+
+/* ===== BOTÓN SELLO DE CERA ===== */
+.btn-seal {
+    width: 100%;
+    padding: 14px;
+    background: #8b5e34;
+    color: white;
+    font-family: 'Playfair Display', serif;
+    font-weight: bold;
+    font-size: 1.1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
     position: relative;
     overflow: hidden;
+    transition: 0.4s;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    box-shadow: 0 5px 15px rgba(139, 94, 52, 0.3);
 }
 
-.btn-login:hover {
-    animation: glow 1.5s infinite;
-    transform: translateY(-2px);
+/* Brillo metálico que cruza el botón */
+.btn-seal::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    transition: 0.5s;
 }
 
-.btn-login:active {
-    transform: scale(0.96);
+.btn-seal:hover::before {
+    left: 100%;
 }
 
-/* ===== ERROR ===== */
-.error-text {
-    color: #b82d2d;
-    font-weight: bold;
-    text-align: center;
-    background: #ffe6e6;
+.btn-seal:hover {
+    background: #6d4828;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 25px rgba(139, 94, 52, 0.5);
+}
+
+/* ===== ANIMACIONES KEYFRAMES ===== */
+@keyframes pulseGlow {
+    0% { box-shadow: 0 0 0 0 rgba(139, 94, 52, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(139, 94, 52, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(139, 94, 52, 0); }
+}
+
+@keyframes shakeError {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+.error-msg {
+    color: #d32f2f;
+    background: rgba(211, 47, 47, 0.1);
+    border: 1px solid #d32f2f;
     padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #f5c2c2;
-    margin-bottom: 18px;
-    animation: shake 0.45s;
+    border-radius: 5px;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 0.9rem;
+    animation: shakeError 0.5s;
 }
 </style>
 
-<div class="login-container">
+<div class="login-wrapper" id="loginWrapper">
+    
+    <div id="particles"></div>
 
-    <h2 class="login-title">🔐 Iniciar Sesión</h2>
+    <div class="login-card-3d" id="loginCard">
+        <div class="floating-content">
+            
+            <div class="login-header">
+                <div class="icon-lock-wrapper">
+                    <i class="fas fa-key icon-lock"></i>
+                </div>
+                <h2 class="login-title">Acceso Restringido</h2>
+                <p style="color: #8c7a6b; font-size: 0.9rem;">Identifíquese para consultar los archivos</p>
+            </div>
 
-    {% if form.errors %}
-        <p class="error-text">⚠️ Usuario o contraseña incorrectos</p>
-    {% endif %}
+            {% if form.errors %}
+                <div class="error-msg">
+                    <i class="fas fa-exclamation-triangle me-2"></i> Credenciales no reconocidas
+                </div>
+            {% endif %}
 
-    <form method="POST">
-        {% csrf_token %}
+            <form method="POST">
+                {% csrf_token %}
 
-        <div class="mb-3">
-            <label for="id_username" class="form-label">Usuario</label>
-            <input type="text" name="username" id="id_username"
-                   class="form-control" required
-                   placeholder="Tu usuario">
+                <div class="input-group-magic">
+                    <input type="text" name="username" class="input-magic" required autocomplete="off">
+                    <label class="label-magic"><i class="fas fa-user me-2"></i>Usuario</label>
+                    <span class="magic-line"></span>
+                </div>
+
+                <div class="input-group-magic">
+                    <input type="password" name="password" class="input-magic" required>
+                    <label class="label-magic"><i class="fas fa-lock me-2"></i>Contraseña</label>
+                    <span class="magic-line"></span>
+                </div>
+
+                <button type="submit" class="btn-seal">
+                    Abrir Catálogo
+                </button>
+            </form>
+
         </div>
-
-        <div class="mb-3">
-            <label for="id_password" class="form-label">Contraseña</label>
-            <input type="password" name="password" id="id_password"
-                   class="form-control" required
-                   placeholder="••••••••">
-        </div>
-
-        <button type="submit" class="btn-login">
-            Entrar al sistema
-        </button>
-    </form>
+    </div>
 </div>
+
+<script>
+    // ===== SCRIPT PARA EFECTO 3D (TILT) =====
+    const card = document.getElementById('loginCard');
+    const wrapper = document.getElementById('loginWrapper');
+
+    wrapper.addEventListener('mousemove', (e) => {
+        const xAxis = (window.innerWidth / 2 - e.pageX) / 25; // Controla la intensidad rotación X
+        const yAxis = (window.innerHeight / 2 - e.pageY) / 25; // Controla la intensidad rotación Y
+        
+        // Aplica la rotación a la tarjeta
+        card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+    });
+
+    // Resetear posición cuando el mouse sale
+    wrapper.addEventListener('mouseleave', () => {
+        card.style.transform = `rotateY(0deg) rotateX(0deg)`;
+        card.style.transition = "all 0.5s ease";
+    });
+
+    wrapper.addEventListener('mouseenter', () => {
+        card.style.transition = "none";
+    });
+
+    // ===== SCRIPT PARA GENERAR POLVO =====
+    const particlesContainer = document.getElementById('particles');
+    const particleCount = 20;
+
+    for (let i = 0; i < particleCount; i++) {
+        let particle = document.createElement('div');
+        particle.classList.add('dust-particle');
+        
+        // Posición y tamaño aleatorio
+        let size = Math.random() * 5 + 2;
+        particle.style.width = `${size}px`;
+        particle.style.height = `${size}px`;
+        particle.style.left = `${Math.random() * 100}vw`;
+        particle.style.top = `${Math.random() * 100}vh`;
+        
+        // Duración aleatoria de la animación
+        let duration = Math.random() * 10 + 10;
+        particle.style.animationDuration = `${duration}s`;
+        
+        particlesContainer.appendChild(particle);
+    }
+</script>
 
 {% endblock %}

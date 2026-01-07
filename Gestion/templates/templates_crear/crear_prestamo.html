@@ -3,125 +3,89 @@
 {% block contenido %}
 
 <style>
-    /* Fondo y textos estilo libro antiguo */
-    body {
-        background: #f4eee0;
-        font-family: "Georgia", serif;
-        color: #4a372a;
+    body { background: #f4eee0; font-family: "Georgia", serif; color: #4a372a; }
+    .library-title { color: #5a3825; font-weight: bold; text-shadow: 1px 1px #d6c1a5; }
+    .library-card { 
+        background: #fff9f1; border: 2px solid #d4b894; border-radius: 12px; 
+        box-shadow: 0 4px 10px rgba(80, 55, 35, 0.25); padding: 20px; 
+        position: relative; overflow: hidden;
     }
-
-    .library-title {
-        color: #5a3825;
-        font-weight: bold;
-        text-shadow: 1px 1px #d6c1a5;
+    .library-card::before { 
+        content: ""; width: 100%; height: 12px; position: absolute; 
+        top: 0; left: 0; background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34); 
     }
-
-    /* Tarjeta estilo estante */
-    .library-card {
-        background: #fff9f1;
-        border: 2px solid #d4b894;
-        border-radius: 12px;
-        box-shadow: 0 4px 10px rgba(80, 55, 35, 0.25);
-        padding: 20px;
-        position: relative;
-    }
-
-    /* Franja madera arriba */
-    .library-card::before {
-        content: "";
-        width: 100%;
-        height: 12px;
-        position: absolute;
-        top: 0;
-        left: 0;
-        background: linear-gradient(90deg, #8b5e34, #a47148, #8b5e34);
-    }
-
-    .form-label {
-        font-weight: bold;
-        color: #5c422e;
-    }
-
-    .form-select,
-    .form-control {
-        background: #fffdf8;
-        border: 1px solid #c5a886;
-        color: #4a372a;
-    }
-
-    .form-select:focus,
-    .form-control:focus {
-        border-color: #8b5e34;
-        box-shadow: 0 0 6px rgba(139, 94, 52, 0.4);
-    }
-
-    .btn-library {
-        background-color: #8b5e34;
-        border: none;
-        color: #fff;
-        font-weight: bold;
-        padding: 10px;
-    }
-
-    .btn-library:hover {
-        background-color: #6d4828;
-        color: #fff;
-    }
+    .form-label { font-weight: bold; color: #5c422e; }
+    .form-select, .form-control { background: #fffdf8; border: 1px solid #c5a886; color: #4a372a; }
+    .btn-library { background-color: #8b5e34; border: none; color: #fff; font-weight: bold; padding: 10px; transition: 0.3s; }
+    .btn-library:hover { background-color: #6d4828; transform: translateY(-2px); color: white; }
+    .badge-info { background-color: #e2d1c3; color: #5a3825; padding: 5px 10px; border-radius: 5px; font-size: 0.9rem; }
 </style>
 
-<div class="container mt-4">
+<div class="container mt-4 animate__animated animate__fadeIn">
 
-    <h2 class="text-center mb-4 library-title">📖 Crear Préstamo</h2>
+    <h2 class="text-center mb-4 library-title">
+        {% if es_bibliotecario %} 📖 Registrar Préstamo Oficial {% else %} ✍️ Solicitar Préstamo {% endif %}
+    </h2>
 
     <div class="library-card">
-
         <form method="POST">
             {% csrf_token %}
 
-            <!-- Libro -->
-            <div class="mb-3">
-                <label for="id_libro" class="form-label">Libro:</label>
+            <div class="mb-4">
+                <label for="id_libro" class="form-label">Obra a solicitar:</label>
                 <select id="id_libro" name="libro" class="form-select" required>
-                    <option value="">-- Seleccionar Libro --</option>
+                    <option value="">-- Seleccione un ejemplar disponible --</option>
                     {% for libro in libros %}
                         <option value="{{ libro.id }}">{{ libro.titulo }}</option>
                     {% endfor %}
                 </select>
+                <div class="form-text">Solo se muestran libros con stock disponible.</div>
             </div>
 
-            <!-- Usuario -->
-            <div class="mb-3">
-                <label for="id_usuario" class="form-label">Usuario:</label>
-                <select id="id_usuario" name="usuario" class="form-select" required>
-                    <option value="">-- Seleccionar Usuario --</option>
-                    {% for usuario in usuarios %}
-                        <option value="{{ usuario.id }}">{{ usuario.username }}</option>
-                    {% endfor %}
-                </select>
+            <div class="mb-4">
+                <label class="form-label">Identificación del solicitante:</label>
+                
+                {% if es_bibliotecario %}
+                    <select id="id_usuario" name="usuario" class="form-select" required>
+                        <option value="">-- Buscar socio en el sistema --</option>
+                        {% for usuario in usuarios %}
+                            <option value="{{ usuario.id }}">{{ usuario.username }} ({{ usuario.email }})</option>
+                        {% endfor %}
+                    </select>
+                {% else %}
+                    <div class="d-flex align-items-center">
+                        <input type="text" class="form-control" value="{{ user.get_full_name|default:user.username }}" readonly>
+                        <span class="ms-2 badge-info">Tú</span>
+                    </div>
+                    <input type="hidden" name="usuario" value="{{ user.id }}">
+                {% endif %}
             </div>
 
-            <!-- Fecha -->
-            <div class="mb-3">
-                <label for="id_fecha_prestamo" class="form-label">Fecha de Préstamo:</label>
+            <div class="mb-4">
+                <label for="id_fecha_prestamo" class="form-label">Fecha de registro:</label>
                 <input 
                     type="date" 
                     id="id_fecha_prestamo" 
                     name="fecha_prestamo" 
                     class="form-control"
-                    value="{{ fecha }}" 
+                    {% if not es_bibliotecario %} readonly {% endif %}
+                    value="{{ fecha|default:today_date }}" 
                     required
                 >
             </div>
 
-            <button type="submit" class="btn btn-library w-100">
-                Guardar Préstamo 📚
+            <hr class="my-4" style="border-top: 1px dashed #d4b894;">
+
+            <button type="submit" class="btn btn-library w-100 shadow-sm">
+                {% if es_bibliotecario %} Confirmar Préstamo en Sistema {% else %} Enviar Solicitud de Préstamo {% endif %}
             </button>
 
+            <div class="text-center mt-3">
+                <a href="{% url 'libro_list' %}" class="text-muted small text-decoration-none">← Volver al catálogo</a>
+            </div>
+
         </form>
-
     </div>
-
 </div>
 
 {% endblock %}
-

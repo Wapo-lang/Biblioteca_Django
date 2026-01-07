@@ -5,43 +5,34 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('', index, name ='index'),
 
-    #Path class view
+    # Libros (Vistas de Clase)
     path('libros_list/', LibroListView.as_view(), name='libro_list'),
     path('libros/<int:pk>/', LibroDetalleView.as_view(), name='libro_detalle'),
     path('libros/<int:pk>/editar/', LibroUpdateView.as_view(), name='libro_editar'),
-    path('libros/<int:pk>/eliminar/', LibroDeleteView.as_view(), name='libro_eliminar'),  
+    path('libros/<int:pk>/eliminar/', LibroDeleteView.as_view(), name='libro_eliminar'),
+    path('libros/nuevo/', crear_libro, name='crear_libro'),
 
-    path('prestamos/<int:pk>/eliminar/', PrestamoDeleteView.as_view(), name='eliminar_prestamo'),  
-
-    #Gestion de Usuarios
-    path('login/', auth_views.LoginView.as_view(), name = 'login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name = 'logout'),
-
-    #Cambio de cantraseña
-    path('password_change/', auth_views.PasswordChangeView.as_view(), name='password_change'),
-    path('password_change/done/', auth_views.PasswordChangeDoneView.as_view(), name='password_change_done'),
-
+    # Usuarios y Autenticación
+    path('login/', auth_views.LoginView.as_view(), name='login'),
+    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('registro/', registro, name='registro'),
+    # CAMBIO AQUÍ: Quitamos 'admin/' del inicio para evitar el Error 404
+    path('personal/crear-empleado/', crear_empleado, name='crear_empleado'),
 
-    #libros
-    path('libros/nuevo', crear_libro, name='crear_libro'),
-
-    #autores
+    # Autores
     path('autores/', lista_autores, name='lista_autores'),
-    path('autores/nuevo', crear_autor, name='crear_autor'),
-    path('autores/<int:id>/editar', crear_autor, name='editar_autor'),
+    path('autores/nuevo/', crear_autor, name='crear_autor'),
+    path('autores/<int:id>/editar/', crear_autor, name='editar_autor'),
 
-    #prestamos
+    # Préstamos
     path('prestamos/', lista_prestamos, name='lista_prestamos'),
-    path('prestamos/nuevo', crear_prestamo, name='crear_prestamo'),
-    path('pretamos/<int:id>', detalle_prestamo, name='detalle_prestamo'),
-
+    path('prestamos/nuevo/', crear_prestamo, name='crear_prestamo'),
+    path('prestamos/<int:id>/', detalle_prestamo, name='detalle_prestamo'), # Corregido 'pretamos'
     path('prestamos/devolver/<int:prestamo_id>/', devolver_libro, name='devolver_libro'),
+    path('prestamos/<int:pk>/eliminar/', PrestamoDeleteView.as_view(), name='eliminar_prestamo'),
 
-    #multas
+    # Multas
     path('multas/', lista_multa, name='lista_multas'),
-    path('multas/nuevo/<int:prestamo_id>', crear_multa, name='crear_multa'),
-
+    path('multas/nuevo/<int:prestamo_id>/', crear_multa, name='crear_multa'),
     path('multas/pagar/<int:multa_id>/', pagar_multa, name='pagar_multa'),
-
 ]

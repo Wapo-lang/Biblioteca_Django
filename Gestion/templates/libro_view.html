@@ -2,158 +2,264 @@
 {% block contenido %}
 
 <style>
-    /* Tipografía y Fondo General */
-    body {
-        background-color: #f8f4f0; /* Color papel antiguo suave */
+    body { 
+        background-color: #f8f4f0; 
+        font-family: 'Georgia', serif; 
     }
-
-    .library-title {
-        color: #4a3427;
-        font-family: 'Garamond', 'Georgia', serif;
-        font-weight: 800;
-        letter-spacing: -1px;
-        text-shadow: 2px 2px 4px rgba(0,0,0,0.05);
-    }
-
-    /* Tarjeta Principal */
-    .library-card {
-        background: #ffffff;
-        border: 1px solid #e2d1c3;
-        border-radius: 16px;
-        box-shadow: 0 10px 30px rgba(80, 55, 35, 0.08);
-        padding: 30px;
+    .library-title { 
+        color: #4a3427; 
+        font-family: 'Garamond', 'Georgia', serif; 
+        font-weight: 800; 
+        letter-spacing: -1px; 
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.05); 
         position: relative;
         overflow: hidden;
     }
-
-    /* Decoración de madera superior más estilizada */
-    .library-card::before {
-        content: "";
-        width: 100%;
-        height: 6px;
+    .library-title::after {
+        content: '';
         position: absolute;
-        top: 0; left: 0;
-        background: linear-gradient(90deg, #5c422e, #8b5e34, #5c422e);
+        bottom: -4px;
+        left: 0;
+        width: 100%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #8b5e34, transparent);
+        animation: underline-glow 3s ease-in-out infinite;
     }
-
-    /* Estilos de la Tabla */
-    .table {
-        border-collapse: separate;
-        border-spacing: 0 12px; /* Espaciado entre filas para efecto tarjeta */
+    @keyframes underline-glow {
+        0% { transform: translateX(-100%); }
+        50% { transform: translateX(0); }
+        100% { transform: translateX(100%); }
     }
-
-    .table thead th {
-        border: none;
-        color: #8b5e34;
-        text-transform: uppercase;
-        font-size: 0.75rem;
-        letter-spacing: 1px;
-        padding-bottom: 20px;
+    .library-card { 
+        background: linear-gradient(145deg, #ffffff, #f9f5f1); 
+        border: 1px solid #e2d1c3; 
+        border-radius: 20px; 
+        box-shadow: 0 15px 40px rgba(80, 55, 35, 0.1); 
+        padding: 40px; 
+        position: relative; 
+        overflow: hidden; 
+        transition: box-shadow 0.5s ease;
     }
-
-    .table tbody tr {
+    .library-card:hover {
+        box-shadow: 0 20px 50px rgba(80, 55, 35, 0.15);
+    }
+    .library-card::before { 
+        content: ""; 
+        width: 100%; 
+        height: 8px; 
+        position: absolute; 
+        top: 0; 
+        left: 0; 
+        background: linear-gradient(90deg, #5c422e, #8b5e34, #5c422e); 
+        animation: gradient-flow 5s linear infinite;
+    }
+    @keyframes gradient-flow {
+        0% { background-position: 0% 50%; }
+        100% { background-position: 200% 50%; }
+    }
+    .table { 
+        border-collapse: separate; 
+        border-spacing: 0 15px; 
+    }
+    .table thead th { 
+        border: none; 
+        color: #8b5e34; 
+        text-transform: uppercase; 
+        font-size: 0.8rem; 
+        letter-spacing: 1.5px; 
+        padding-bottom: 25px; 
+        position: relative;
+    }
+    .table thead th::after {
+        content: '';
+        position: absolute;
+        bottom: 10px;
+        left: 0;
+        width: 100%;
+        height: 1px;
+        background: #e2d1c3;
+    }
+    .table tbody tr { 
+        background: #fffdfb; 
+        transition: all 0.4s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+        box-shadow: 0 4px 10px rgba(0,0,0,0.03); 
+        border-radius: 12px;
+        opacity: 0;
+        transform: translateY(20px);
+        animation: row-slide-in 0.5s ease forwards;
+    }
+    @keyframes row-slide-in {
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    .table tbody tr:nth-child(1) { animation-delay: 0.1s; }
+    .table tbody tr:nth-child(2) { animation-delay: 0.2s; }
+    .table tbody tr:nth-child(3) { animation-delay: 0.3s; }
+    .table tbody tr:nth-child(4) { animation-delay: 0.4s; }
+    .table tbody tr:nth-child(5) { animation-delay: 0.5s; }
+    /* Add more for additional rows if needed */
+    .table tbody tr:hover { 
+        background: #fff9f1 !important; 
+        transform: translateY(-4px) scale(1.02); 
+        box-shadow: 0 10px 25px rgba(80, 55, 35, 0.15); 
+    }
+    .table td { 
+        padding: 20px !important; 
+        border: none !important; 
+        vertical-align: middle; 
+    }
+    .table td:first-child { 
+        border-radius: 12px 0 0 12px; 
+    }
+    .table td:last-child { 
+        border-radius: 0 12px 12px 0; 
+    }
+    .book-thumbnail { 
+        width: 70px; 
+        height: 105px; 
+        object-fit: cover; 
+        border-radius: 10px; 
+        box-shadow: 4px 8px 16px rgba(0,0,0,0.25); 
+        transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+        cursor: pointer;
+    }
+    .book-thumbnail:hover { 
+        transform: scale(3.5) translateX(40px) rotate(3deg); 
+        z-index: 1000; 
+        box-shadow: 0 20px 40px rgba(0,0,0,0.3); 
+    }
+    .no-cover-placeholder { 
+        width: 70px; 
+        height: 105px; 
+        background: linear-gradient(145deg, #f1ede4, #e8e0d5); 
+        border: 2px dashed #dcd3c1; 
+        border-radius: 10px; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        color: #a48d71; 
+        transition: all 0.4s ease;
+        font-size: 1.8rem;
+    }
+    .no-cover-placeholder:hover {
+        transform: rotate(-3deg) scale(1.1);
+        box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+    }
+    .action-btn { 
+        display: inline-flex; 
+        align-items: center; 
+        justify-content: center; 
+        width: 40px; 
+        height: 40px; 
+        border-radius: 12px; 
+        background: #fdfaf6; 
+        border: 1px solid #eee4da; 
+        transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55); 
+        text-decoration: none !important; 
+        margin: 0 4px; 
+        font-size: 1.2rem;
+    }
+    .action-btn:hover { 
+        transform: scale(1.2) rotate(15deg); 
+        background: #fff; 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    .btn-page { 
+        background: linear-gradient(145deg, #fff, #f9f5f1); 
+        color: #5c422e; 
+        border: 1px solid #e2d1c3; 
+        padding: 10px 20px; 
+        border-radius: 50px; 
+        text-decoration: none; 
+        font-weight: 600; 
+        transition: all 0.4s ease; 
+        position: relative;
+        overflow: hidden;
+        margin: 0 5px;
+        box-shadow: 0 2px 5px rgba(80, 55, 35, 0.05);
+    }
+    .btn-page::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+        transition: left 0.4s ease;
+    }
+    .btn-page:hover::before {
+        left: 100%;
+    }
+    .btn-page:hover { 
+        background: linear-gradient(145deg, #8b5e34, #7a5230); 
+        color: white; 
+        border-color: #8b5e34; 
+        transform: translateY(-3px) scale(1.05);
+        box-shadow: 0 5px 15px rgba(80, 55, 35, 0.15);
+    }
+    .page-current { 
+        font-family: 'Georgia', serif; 
+        font-style: italic; 
+        color: #8b5e34; 
+        position: relative;
         background: #fffdfb;
+        padding: 10px 20px;
+        border-radius: 50px;
+        box-shadow: 0 2px 5px rgba(80, 55, 35, 0.05);
+    }
+    .page-current::before {
+        content: '📖 ';
+        animation: book-flip 1.5s infinite;
+    }
+    @keyframes book-flip {
+        0% { transform: rotate(0); }
+        50% { transform: rotate(10deg); }
+        100% { transform: rotate(0); }
+    }
+    .badge {
         transition: all 0.3s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.02);
+        border-radius: 20px;
+        padding: 6px 12px;
     }
-
-    .table tbody tr:hover {
-        background: #fff9f1 !important;
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(80, 55, 35, 0.1);
-    }
-
-    .table td {
-        padding: 15px !important;
-        border: none !important;
-        vertical-align: middle;
-    }
-
-    .table td:first-child { border-radius: 10px 0 0 10px; }
-    .table td:last-child { border-radius: 0 10px 10px 0; }
-
-    /* Portadas con Pillow */
-    .book-thumbnail {
-        width: 50px;
-        height: 75px;
-        object-fit: cover;
-        border-radius: 6px;
-        box-shadow: 2px 4px 8px rgba(0,0,0,0.15);
-        transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-    }
-
-    .book-thumbnail:hover {
-        transform: scale(2.5) translateX(20px);
-        z-index: 100;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
-    }
-
-    .no-cover-placeholder {
-        width: 50px;
-        height: 75px;
-        background: #f1ede4;
-        border: 2px dashed #dcd3c1;
-        border-radius: 6px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #a48d71;
-    }
-
-    /* Acciones - Iconos más elegantes */
-    .action-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        width: 35px;
-        height: 35px;
-        border-radius: 8px;
-        background: #fdfaf6;
-        border: 1px solid #eee4da;
-        transition: 0.2s;
-        text-decoration: none !important;
-        margin: 0 2px;
-    }
-
-    .action-btn:hover {
+    .badge:hover {
         transform: scale(1.1);
-        background: #fff;
     }
-
-    /* Paginación */
-    .btn-page {
-        background: #fff;
-        color: #5c422e;
-        border: 1px solid #e2d1c3;
-        padding: 8px 16px;
-        border-radius: 10px;
-        text-decoration: none;
-        font-weight: 600;
-        transition: 0.3s;
+    .container {
+        animation: fadeInUp 1s ease;
     }
-
-    .btn-page:hover {
-        background: #8b5e34;
-        color: white;
-        border-color: #8b5e34;
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(50px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
-
-    .page-current {
-        font-family: 'Georgia', serif;
-        font-style: italic;
-        color: #8b5e34;
+    .pagination-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
     }
 </style>
 
-<div class="container mt-5 animate__animated animate__fadeIn">
+<div class="container mt-5">
     <div class="d-flex justify-content-between align-items-end mb-4 px-2">
         <div>
             <h2 class="library-title m-0">Catálogo de Obras</h2>
             <p class="text-muted small mb-0">Gestión de acervo bibliográfico local</p>
         </div>
-        <a href="{% url 'crear_libro' %}" class="btn btn-dark shadow-sm px-4" style="background: #2c1e16; border: none; border-radius: 10px;">
+        
+        {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bodega' %}
+        <a href="{% url 'crear_libro' %}" class="btn btn-dark shadow-sm px-4" style="background: #2c1e16; border: none; border-radius: 50px; transition: all 0.3s ease;">
             <i class="fas fa-plus me-2"></i> Nuevo Libro
         </a>
+        {% endif %}
     </div>
 
     <div class="library-card">
@@ -161,7 +267,7 @@
             <table class="table align-middle">
                 <thead>
                     <tr>
-                        <th style="width: 80px;">Portada</th>
+                        <th style="width: 120px;">Portada</th>
                         <th>Información del Libro</th>
                         <th>Autor</th>
                         <th class="text-center">Estado</th>
@@ -176,14 +282,14 @@
                                 <img src="{{ libro.portada.url }}" class="book-thumbnail" alt="Portada">
                             {% else %}
                                 <div class="no-cover-placeholder">
-                                    <i class="fas fa-book" style="font-size: 1.2rem;"></i>
+                                    <i class="fas fa-book"></i>
                                 </div>
                             {% endif %}
                         </td>
 
                         <td>
-                            <div class="fw-bold text-dark" style="font-size: 1.05rem;">{{ libro.titulo }}</div>
-                            <div class="text-muted x-small" style="font-size: 0.8rem;">ISBN: {{ libro.isbn|default:"N/A" }}</div>
+                            <div class="fw-bold text-dark" style="font-size: 1.1rem;">{{ libro.titulo }}</div>
+                            <div class="text-muted x-small" style="font-size: 0.85rem;">ISBN: {{ libro.isbn|default:"N/A" }}</div>
                         </td>
 
                         <td>
@@ -192,10 +298,10 @@
                         
                         <td class="text-center">
                             {% if libro.ejemplares_disponibles > 0 %}
-                                <span class="badge" style="background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9;">
+                                <span class="badge" style="background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; animation: pulse-available 2s infinite;">
                                     ● Disponible
                                 </span>
-                                <div class="text-muted mt-1" style="font-size: 0.7rem;">{{ libro.ejemplares_disponibles }} en estante</div>
+                                <div class="text-muted mt-1" style="font-size: 0.75rem;">{{ libro.ejemplares_disponibles }} en estante</div>
                             {% else %}
                                 <span class="badge" style="background: #ffebee; color: #c62828; border: 1px solid #ffcdd2;">
                                     ● Agotado
@@ -206,17 +312,19 @@
                         <td class="text-center">
                             <a href="{% url 'libro_detalle' libro.pk %}" class="action-btn text-primary" title="Ver detalle">🔍</a>
 
-                            {% if libro.ejemplares_disponibles > 0 %}
-                                <a href="{% url 'crear_prestamo' %}?libro_id={{ libro.id }}" class="action-btn text-success" title="Prestar">📖</a>
-                            {% else %}
-                                <span class="action-btn text-muted" style="opacity: 0.5; cursor: not-allowed;">📖</span>
+                            {% if user.groups.all.0.name != 'Bodega' %}
+                                {% if libro.ejemplares_disponibles > 0 %}
+                                    <a href="{% url 'crear_prestamo' %}?libro_id={{ libro.id }}" class="action-btn text-success" title="Prestar">📖</a>
+                                {% else %}
+                                    <span class="action-btn text-muted" style="opacity: 0.5; cursor: not-allowed;">📖</span>
+                                {% endif %}
                             {% endif %}
 
-                            {% if perms.Gestion.change_libro %}
+                            {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bodega' %}
                                 <a href="{% url 'libro_editar' libro.pk %}" class="action-btn text-warning" title="Editar">✏️</a>
                             {% endif %}
 
-                            {% if perms.Gestion.delete_libro %}
+                            {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bodega' %}
                                 <a href="{% url 'libro_eliminar' libro.pk %}" class="action-btn text-danger" title="Eliminar">🗑️</a>
                             {% endif %}
                         </td>
@@ -230,20 +338,28 @@
     {% if is_paginated %}
     <nav class="pagination-container py-4">
         {% if page_obj.has_previous %}
-            <a href="?page=1" class="btn-page">«</a>
+            <a href="?page=1" class="btn-page">« Primera</a>
             <a href="?page={{ page_obj.previous_page_number }}" class="btn-page">Anterior</a>
         {% endif %}
 
-        <span class="page-current mx-3">
+        <span class="page-current">
             {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}
         </span>
 
         {% if page_obj.has_next %}
             <a href="?page={{ page_obj.next_page_number }}" class="btn-page">Siguiente</a>
-            <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-page">»</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="btn-page">Última »</a>
         {% endif %}
     </nav>
     {% endif %}
 </div>
+
+<style>
+    @keyframes pulse-available {
+        0% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0.4); }
+        70% { box-shadow: 0 0 0 10px rgba(46, 125, 50, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(46, 125, 50, 0); }
+    }
+</style>
 
 {% endblock %}

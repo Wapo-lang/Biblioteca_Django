@@ -5,111 +5,196 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Biblioteca</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=EB+Garamond:wght@400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=EB+Garamond:wght@400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"/>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
 
     <style>
-        /* Fondo con textura de papel sutil */
-        body {
-            background-color: #f4eee0;
-            background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
-            color: #3c2f21;
-            font-family: 'EB Garamond', serif;
-            font-size: 1.1rem;
+        :root {
+            --wood-dark: #3d2b1f;
+            --wood-light: #5c422e;
+            --gold-accent: #c5a065;
+            --paper-bg: #f4eee0;
+            --text-main: #2c1e16;
         }
 
-        /* NAVBAR: Efecto madera pulida con relieve */
-        .navbar {
-            background: linear-gradient(180deg, #5c4033 0%, #3d2b1f 100%);
-            border-bottom: 4px solid #a67c52;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4);
-            padding: 0.8rem 1rem;
+        /* ===== CUERPO Y FONDO ===== */
+        body {
+            background-color: var(--paper-bg);
+            /* Patrón de papel sutil y fijo para no marear al hacer scroll */
+            background-image: url("https://www.transparenttextures.com/patterns/natural-paper.png");
+            background-attachment: fixed; 
+            color: var(--text-main);
+            font-family: 'EB Garamond', serif;
+            font-size: 1.15rem;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* ===== NAVBAR DE LUJO ===== */
+        .navbar-custom {
+            background: linear-gradient(to right, #2b1d14, #3d2b1f);
+            border-bottom: 3px solid var(--gold-accent);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            padding: 1rem 0;
+            position: relative;
+            z-index: 1000;
         }
 
         .navbar-brand {
             font-family: 'Playfair Display', serif;
-            font-size: 1.6rem;
-            color: #e6ccb2 !important;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #fdfaf5 !important;
             text-transform: uppercase;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
         }
 
         .nav-link {
-            color: #ddc5a2 !important;
-            margin: 0 10px;
+            color: #dccbb6 !important;
+            margin: 0 12px;
             font-weight: 500;
+            font-size: 1.05rem;
+            position: relative;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 50%;
+            background-color: var(--gold-accent);
             transition: all 0.3s ease;
-            border-bottom: 2px solid transparent;
+            transform: translateX(-50%);
         }
 
         .nav-link:hover {
             color: #fff !important;
-            border-bottom: 2px solid #a67c52;
         }
 
-        /* HERO BANNER: Más cinemático */
-        .hero-banner {
-            height: 400px;
-            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), 
-                        url("https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000") center/cover no-repeat;
-            border-bottom: 6px solid #8b5e34;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
+        .nav-link:hover::after {
+            width: 100%;
         }
 
-        .hero-banner h1 {
-            font-family: 'Playfair Display', serif;
-            font-size: 3.5rem;
-            text-shadow: 2px 4px 8px rgba(0,0,0,0.8);
-            letter-spacing: 2px;
-        }
-
-        /* ALERTAS: Estilo sello lacrado */
-        .alert {
-            border: none;
-            border-left: 5px solid;
-            border-radius: 8px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            font-family: sans-serif;
-            font-size: 0.95rem;
-        }
-
-        /* BOTONES DEL NAV */
-        .btn-logout {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid #a67c52;
-            color: #e6ccb2;
-            padding: 5px 15px;
-            border-radius: 20px;
+        /* Botón de Salir especial */
+        .btn-logout-nav {
+            border: 1px solid var(--gold-accent);
+            color: var(--gold-accent);
+            padding: 6px 18px;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            background: transparent;
             transition: all 0.3s;
         }
 
-        .btn-logout:hover {
-            background: #a67c52;
-            color: white;
+        .btn-logout-nav:hover {
+            background: var(--gold-accent);
+            color: var(--wood-dark);
+            box-shadow: 0 0 15px rgba(197, 160, 101, 0.4);
         }
 
-        /* Footer sutil */
-        footer {
-            margin-top: 50px;
-            padding: 30px 0;
-            background: #3d2b1f;
-            color: #8d7b68;
+        /* ===== HERO BANNER (Cabecera) ===== */
+        .hero-section {
+            position: relative;
+            height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            /* Fondo fijo para efecto parallax suave (sin JS) */
+            background: url("https://images.unsplash.com/photo-1507842217343-583bb7270b66?q=80&w=2000") center/cover no-repeat fixed;
+            border-bottom: 8px solid var(--wood-light);
+            box-shadow: inset 0 0 150px rgba(0,0,0,0.7);
+        }
+
+        .hero-overlay {
+            /* Efecto vidrio esmerilado para el texto */
+            background: rgba(44, 30, 22, 0.65);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            padding: 3rem 4rem;
+            border-radius: 4px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
             text-align: center;
-            font-size: 0.9rem;
+            max-width: 800px;
+            box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+        }
+
+        .hero-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 3.8rem;
+            color: #fff;
+            margin-bottom: 1rem;
+            text-shadow: 0 4px 10px rgba(0,0,0,0.6);
+            letter-spacing: 1px;
+        }
+
+        .hero-quote {
+            color: #e0d0c0;
+            font-style: italic;
+            font-size: 1.4rem;
+            font-weight: 400;
+            border-top: 1px solid var(--gold-accent);
+            padding-top: 20px;
+            display: inline-block;
+        }
+
+        /* ===== ALERTAS (Estilo Marcapáginas) ===== */
+        .alert-custom {
+            border: none;
+            background: #fff;
+            border-left: 6px solid;
+            border-radius: 4px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            font-family: 'EB Garamond', serif;
+            font-weight: 600;
+            color: var(--wood-dark);
+            display: flex;
+            align-items: center;
+            padding: 1rem 1.5rem;
+        }
+
+        .alert-success { border-color: #2e7d32; background: #edf7ed; }
+        .alert-error { border-color: #c62828; background: #fdeded; }
+        .alert-warning { border-color: #ef6c00; background: #fff3e0; }
+
+        /* ===== FOOTER ===== */
+        footer {
+            margin-top: auto;
+            background: var(--wood-dark);
+            color: #a69b95;
+            padding: 40px 0;
+            border-top: 4px solid var(--gold-accent);
+            text-align: center;
+            position: relative;
+        }
+
+        .footer-logo {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.5rem;
+            color: var(--gold-accent);
+            margin-bottom: 10px;
+        }
+        
+        /* Contenedor principal */
+        main {
+            flex: 1;
+            position: relative;
         }
     </style>
 </head>
 
 <body>
 
-<nav class="navbar navbar-expand-lg sticky-top animate__animated animate__fadeInDown">
+<nav class="navbar navbar-expand-lg navbar-custom sticky-top animate__animated animate__fadeInDown">
     <div class="container">
         <a class="navbar-brand" href="{% url 'index' %}">
-            <i class="fas fa-book-open me-2"></i>BIBLIOTECA
+            <i class="fas fa-book-open me-2" style="color: var(--gold-accent);"></i> BIBLIOTECA
         </a>
 
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -120,26 +205,26 @@
             <ul class="navbar-nav ms-auto align-items-center">
                 {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'index' %}"><i class="fas fa-home me-1"></i> Inicio</a>
+                        <a class="nav-link" href="{% url 'index' %}">Inicio</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'libro_list' %}"><i class="fas fa-list me-1"></i> Catálogo</a>
+                        <a class="nav-link" href="{% url 'libro_list' %}">Catálogo</a>
                     </li>
                     
-                    <li class="nav-item ms-lg-3">
+                    <li class="nav-item ms-lg-4">
                         <form method="POST" action="{% url 'logout' %}" class="d-inline">
                             {% csrf_token %}
-                            <button type="submit" class="btn-logout">
-                                <i class="fas fa-sign-out-alt me-1"></i> Salir
+                            <button type="submit" class="btn-logout-nav">
+                                <i class="fas fa-sign-out-alt me-1"></i> Cerrar Sesión
                             </button>
                         </form>
                     </li>
                 {% else %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'login' %}">Ingresar</a>
+                        <a class="nav-link" href="{% url 'login' %}">Acceder</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link btn-logout" href="{% url 'registro' %}">Registrarse</a>
+                    <li class="nav-item ms-2">
+                        <a class="btn-logout-nav" href="{% url 'registro' %}">Registrarse</a>
                     </li>
                 {% endif %}
             </ul>
@@ -148,50 +233,58 @@
 </nav>
 
 {% if request.path == '/' or request.path == '/index/' %}
-<header class="hero-banner">
-    <div class="text-center text-white animate__animated animate__zoomIn">
-        <h1 class="fw-bold">Archivo Central de Obras</h1>
-        <p class="lead" style="font-family: 'EB Garamond'; font-style: italic; font-size: 1.5rem;">
-            "La lectura de todos los buenos libros es como una conversación con las mejores mentes de los siglos pasados"
+<header class="hero-section">
+    <div class="hero-overlay animate__animated animate__fadeInUp">
+        <h1 class="hero-title">Archivo Central de Obras</h1>
+        <p class="hero-quote">
+            "Un libro es un sueño que tienes en tus manos."
         </p>
     </div>
 </header>
 {% endif %}
 
 <main class="container py-5">
-    <div class="message-container" style="position: fixed; top: 80px; right: 20px; z-index: 1050; width: 300px;">
+    
+    <div class="message-container" style="position: fixed; top: 100px; right: 20px; z-index: 1060; min-width: 320px;">
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show animate__animated animate__fadeInRight mb-2" role="alert">
-                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-2"></i>
-                    {{ message }}
+                <div class="alert alert-custom alert-{{ message.tags }} alert-dismissible fade show animate__animated animate__fadeInRight mb-3" role="alert">
+                    <i class="fas {% if message.tags == 'success' %}fa-check-circle{% else %}fa-exclamation-circle{% endif %} me-3" style="font-size: 1.2rem;"></i>
+                    <div>{{ message }}</div>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             {% endfor %}
         {% endif %}
     </div>
 
-    {% block contenido %}
-    {% endblock %}
+    <div class="animate__animated animate__fadeIn" style="animation-delay: 0.2s;">
+        {% block contenido %}
+        {% endblock %}
+    </div>
+
 </main>
 
 <footer>
     <div class="container">
-        <p class="mb-0">&copy; 2026 Sistema de Gestión Bibliotecaria • Antigua Tradición Digital</p>
+        <div class="footer-logo">❧ Antigua Tradición Digital ❧</div>
+        <p class="small opacity-75 mb-0">&copy; 2026 Sistema de Gestión Bibliotecaria.</p>
     </div>
 </footer>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // Auto-cierre de alertas mejorado
+    // Cierre automático y suave de alertas
     setTimeout(function() {
         let alerts = document.querySelectorAll('.alert');
         alerts.forEach(function(alert) {
             alert.classList.replace('animate__fadeInRight', 'animate__fadeOutRight');
-            setTimeout(() => alert.remove(), 1000);
+            setTimeout(() => {
+                let bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
+            }, 500);
         });
-    }, 5000);
+    }, 4500);
 </script>
 
 </body>

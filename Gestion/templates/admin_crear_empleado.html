@@ -1,0 +1,108 @@
+{% extends 'index.html' %}
+{% block contenido %}
+
+<style>
+    .admin-container {
+        max-width: 600px;
+        margin: 50px auto;
+    }
+    .admin-card {
+        background: #ffffff;
+        border: 2px solid #e2d1c3;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(80, 55, 35, 0.1);
+        padding: 40px;
+        position: relative;
+    }
+    .admin-card::before {
+        content: "";
+        position: absolute;
+        top: 0; left: 0; right: 0;
+        height: 8px;
+        background: #5c422e;
+        border-radius: 20px 20px 0 0;
+    }
+    .form-title {
+        font-family: 'Playfair Display', serif;
+        color: #3d2b1f;
+        font-weight: 800;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+    .form-label {
+        color: #5c422e;
+        font-weight: 600;
+        margin-top: 15px;
+    }
+    .form-control {
+        border-radius: 10px;
+        border: 1px solid #d4b894;
+        padding: 12px;
+    }
+    .form-control:focus {
+        border-color: #8b5e34;
+        box-shadow: 0 0 0 0.2rem rgba(139, 94, 52, 0.25);
+    }
+    .btn-save {
+        background: #5c422e;
+        color: #f4eee0;
+        border: none;
+        padding: 12px;
+        border-radius: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        width: 100%;
+        margin-top: 30px;
+        transition: 0.3s;
+    }
+    .btn-save:hover {
+        background: #3d2b1f;
+        transform: translateY(-2px);
+    }
+    .btn-cancel {
+        display: block;
+        text-align: center;
+        margin-top: 15px;
+        color: #a67c52;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="container admin-container animate__animated animate__fadeInUp">
+    <div class="admin-card">
+        <h2 class="form-title">
+            <i class="fas fa-user-shield"></i> Alta de Personal
+        </h2>
+        
+        <p class="text-center text-muted mb-4">
+            Complete los datos para registrar un nuevo Bibliotecario o Administrador.
+        </p>
+
+        <form method="POST">
+            {% csrf_token %}
+            
+            {% for field in form %}
+                <div class="mb-3">
+                    <label class="form-label">{{ field.label }}</label>
+                    {{ field }}
+                    {% if field.errors %}
+                        <div class="text-danger small mt-1">
+                            {{ field.errors|striptags }}
+                        </div>
+                    {% endif %}
+                </div>
+            {% endfor %}
+
+            <button type="submit" class="btn btn-save">
+                <i class="fas fa-save me-2"></i> Registrar Empleado
+            </button>
+            
+            <a href="{% url 'index' %}" class="btn-cancel">
+                <i class="fas fa-arrow-left"></i> Volver al Menú Principal
+            </a>
+        </form>
+    </div>
+</div>
+
+{% endblock %}

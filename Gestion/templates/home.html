@@ -2,126 +2,99 @@
 {% block contenido %}
 
 <style>
-    /* Tipografía y Títulos */
+    /* TITULOS: Ajuste de espaciado para mejor simetría */
     .titulo-seccion {
         font-family: 'Playfair Display', serif;
-        font-size: 2.5rem;
+        font-size: 2.2rem;
         font-weight: 900;
         color: #3d2b1f;
         text-align: center;
-        margin-bottom: 40px;
-        position: relative;
+        margin: 40px 0;
         display: flex;
         align-items: center;
         justify-content: center;
-        gap: 15px;
+        gap: 20px;
     }
-
-    /* Adorno lineal a los lados del título */
     .titulo-seccion::before, .titulo-seccion::after {
-        content: "";
-        height: 2px;
-        width: 60px;
-        background: #a67c52;
-        display: inline-block;
+        content: ""; height: 2px; width: 50px; background: #a67c52;
     }
 
-    /* Tarjetas Mejoradas */
+    /* CARDS: Forzamos altura igual para que los botones siempre queden alineados */
     .card-custom {
         background: #ffffff;
         border: 1px solid #e2d1c3;
-        border-radius: 20px;
+        border-radius: 18px;
         box-shadow: 0 8px 25px rgba(0,0,0,0.05);
         transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
-        padding: 15px;
-        height: 100%;
+        padding: 20px;
+        height: 100%; /* Importante: Altura total */
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
+        justify-content: space-between; /* Empuja el botón al fondo */
         position: relative;
         overflow: hidden;
     }
+    
+    .card-body {
+        flex-grow: 1; /* Permite que el cuerpo crezca para empujar el botón */
+        display: flex;
+        flex-direction: column;
+        padding: 10px;
+    }
 
-    /* Decoración de esquina en la tarjeta */
     .card-custom::after {
-        content: "❧";
-        position: absolute;
-        bottom: 5px;
-        right: 15px;
-        color: #e2d1c3;
-        font-size: 1.5rem;
-        opacity: 0.5;
+        content: "❧"; position: absolute; bottom: 5px; right: 15px;
+        color: #e2d1c3; font-size: 1.5rem; opacity: 0.5;
     }
 
     .card-custom:hover {
-        transform: translateY(-10px);
+        transform: translateY(-8px);
         box-shadow: 0 15px 35px rgba(80, 55, 35, 0.15);
         border-color: #8b5e34;
     }
 
     .icon-box {
-        font-size: 2.5rem;
-        color: #8b5e34;
-        margin-bottom: 15px;
-        display: block;
-        text-align: center;
+        font-size: 2.5rem; color: #8b5e34;
+        margin-bottom: 15px; text-align: center;
     }
 
     .card-title {
-        color: #5c422e;
-        font-family: 'Playfair Display', serif;
-        font-weight: 700;
-        text-align: center;
-        margin-bottom: 10px;
+        color: #5c422e; font-family: 'Playfair Display', serif;
+        font-weight: 700; text-align: center; margin-bottom: 12px;
     }
 
     .card-text {
-        color: #7d6e5d;
-        text-align: center;
-        font-size: 0.95rem;
+        color: #7d6e5d; text-align: center;
+        font-size: 0.95rem; line-height: 1.4;
         margin-bottom: 20px;
-        line-height: 1.4;
     }
 
-    /* Botones Estilizados */
+    /* BOTONES: Tamaño uniforme y alineación */
     .btn-action {
-        border-radius: 12px;
-        padding: 10px 20px;
+        border-radius: 10px;
+        padding: 12px 20px;
         font-weight: 600;
         text-transform: uppercase;
         letter-spacing: 1px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         transition: 0.3s;
         border: none;
+        margin-top: auto; /* Alineación perfecta al final de la card */
     }
 
-    .btn-add {
-        background: #5c422e;
-        color: #f4eee0 !important;
-    }
-
-    .btn-add:hover {
-        background: #3d2b1f;
-        transform: scale(1.02);
-    }
+    .btn-add { background: #5c422e; color: #f4eee0 !important; }
+    .btn-add:hover { background: #3d2b1f; transform: scale(1.02); }
 
     .btn-view {
-        background: #f8f4f0;
-        color: #5c422e !important;
+        background: #f8f4f0; color: #5c422e !important;
         border: 1px solid #e2d1c3;
     }
+    .btn-view:hover { background: #e2d1c3; border-color: #8b5e34; }
 
-    .btn-view:hover {
-        background: #e2d1c3;
-        border-color: #8b5e34;
-    }
-
-    /* Separador de secciones */
     hr.divider {
-        border: 0;
-        height: 1px;
-        background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(166, 124, 82, 0.75), rgba(0, 0, 0, 0));
-        margin: 60px 0;
+        border: 0; height: 1px;
+        background-image: linear-gradient(to right, transparent, rgba(166, 124, 82, 0.7), transparent);
+        margin: 50px 0;
     }
 </style>
 
@@ -129,8 +102,9 @@
 
     <section id="libros">
         <h2 class="titulo-seccion"> Gestión de Libros</h2>
-        <div class="row g-4">
-            <div class="col-md-6 col-lg-4 offset-lg-2">
+        <div class="row g-4 justify-content-center">
+            {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bodega' %}
+            <div class="col-md-5 col-lg-4">
                 <div class="card card-custom">
                     <div class="card-body">
                         <span class="icon-box"><i class="fas fa-plus-circle"></i></span>
@@ -140,7 +114,9 @@
                     </div>
                 </div>
             </div>
-            <div class="col-md-6 col-lg-4">
+            {% endif %}
+
+            <div class="col-md-5 col-lg-4">
                 <div class="card card-custom">
                     <div class="card-body">
                         <span class="icon-box"><i class="fas fa-book-open"></i></span>
@@ -155,10 +131,12 @@
 
     <hr class="divider">
 
-    <div class="row">
-        <div class="col-lg-6">
+    <div class="row g-5">
+        {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bodega' or user.groups.all.0.name == 'Bibliotecario' %}
+        <div class="{% if user.groups.all.0.name == 'Bodega' %}col-lg-12{% else %}col-lg-6{% endif %}">
             <h2 class="titulo-seccion" style="font-size: 1.8rem;"> Autores</h2>
-            <div class="row g-3">
+            <div class="row g-3 justify-content-center">
+                {% if user.groups.all.0.name != 'Bibliotecario' %}
                 <div class="col-sm-6">
                     <div class="card card-custom">
                         <div class="card-body">
@@ -167,7 +145,8 @@
                         </div>
                     </div>
                 </div>
-                <div class="col-sm-6">
+                {% endif %}
+                <div class="{% if user.groups.all.0.name == 'Bibliotecario' %}col-sm-8{% else %}col-sm-6{% endif %}">
                     <div class="card card-custom">
                         <div class="card-body">
                             <h6 class="card-title">Directorio</h6>
@@ -177,19 +156,23 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
-        <div class="col-lg-6 mt-5 mt-lg-0">
+        {% if user.groups.all.0.name != 'Bodega' or user.is_superuser %}
+        <div class="{% if user.groups.all.0.name == 'Cliente' %}col-lg-12{% else %}col-lg-6{% endif %}">
             <h2 class="titulo-seccion" style="font-size: 1.8rem;"> Circulación</h2>
-            <div class="row g-3">
-                <div class="col-sm-6">
+            <div class="row g-3 justify-content-center">
+                <div class="col-sm-6 col-md-5">
                     <div class="card card-custom">
                         <div class="card-body">
                             <h6 class="card-title">Nuevo Préstamo</h6>
-                            <a href="{% url 'crear_prestamo' %}" class="btn btn-action btn-add w-100">Prestar</a>
+                            <a href="{% url 'crear_prestamo' %}" class="btn btn-action btn-add w-100">
+                                {% if user.groups.all.0.name == 'Cliente' %}Solicitar{% else %}Prestar{% endif %}
+                            </a>
                         </div>
                     </div>
                 </div>
-                <div class="col-sm-6">
+                <div class="col-sm-6 col-md-5">
                     <div class="card card-custom">
                         <div class="card-body">
                             <h6 class="card-title">Historial</h6>
@@ -199,26 +182,40 @@
                 </div>
             </div>
         </div>
+        {% endif %}
     </div>
 
+    {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
     <hr class="divider">
-
     <section id="admin" class="pb-5">
         <h2 class="titulo-seccion" style="font-size: 1.8rem;"> Administración</h2>
-        <div class="row justify-content-center">
-            <div class="col-md-4">
-                <div class="card card-custom" style="border-style: dashed;">
+        <div class="row g-4 justify-content-center">
+            <div class="col-md-5 col-lg-4">
+                <div class="card card-custom" style="border-style: dashed; border-color: #c62828;">
                     <div class="card-body">
                         <span class="icon-box" style="color: #c62828;"><i class="fas fa-hand-holding-usd"></i></span>
                         <h5 class="card-title">Gestión de Multas</h5>
-                        <p class="card-text text-danger small">Supervisión de sanciones por retrasos en devoluciones.</p>
+                        <p class="card-text text-danger small">Supervisión de sanciones por retrasos.</p>
                         <a href="{% url 'lista_multas' %}" class="btn btn-outline-danger btn-action w-100">Ver Multas</a>
                     </div>
                 </div>
             </div>
+            
+            {% if user.is_superuser or user.groups.all.0.name == 'Administrador' %}
+            <div class="col-md-5 col-lg-4">
+                <div class="card card-custom" style="border: 2px solid #8b5e34;">
+                    <div class="card-body">
+                        <span class="icon-box" style="color: #8b5e34;"><i class="fas fa-users-cog"></i></span>
+                        <h5 class="card-title">Control de Personal</h5>
+                        <p class="card-text small text-muted">Alta de Bibliotecarios y Bodega.</p>
+                        <a href="{% url 'crear_empleado' %}" class="btn btn-add btn-action w-100">Gestionar Equipo</a>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
         </div>
     </section>
+    {% endif %}
 
 </div>
-
 {% endblock %}
