@@ -2,6 +2,7 @@
 {% block contenido %}
 
 <style>
+    /* ... TUS ESTILOS ORIGINALES SE MANTIENEN IGUAL ... */
     .library-title {
         color: #5a3825;
         font-weight: bold;
@@ -15,6 +16,7 @@
         box-shadow: 0 4px 10px rgba(80, 55, 35, 0.25);
         padding: 20px;
         position: relative;
+        overflow: hidden;
     }
 
     .library-card::before {
@@ -32,30 +34,50 @@
     }
 
     .btn-action {
-        padding: 4px 8px;
+        padding: 6px 12px;
         font-size: 0.85rem;
-        border-radius: 6px;
-        transition: 0.3s;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        font-weight: 600;
+    }
+
+    .btn-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+
+    .badge-solicitado {
+        background: #fff3cd;
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    .badge-rechazado {
+        background: #f8d7da;
+        color: #721c24;
     }
 </style>
 
 <div class="container mt-4 animate__animated animate__fadeIn">
     <h2 class="text-center mb-4 library-title">
-        {% if user.groups.all.0.name == 'Cliente' %}
-            📖 Mi Historial de Préstamos
+        {% if es_gestion %}
+            📋 Gestión Global de Préstamos y Solicitudes
         {% else %}
-            📋 Gestión Global de Préstamos
+            📖 Mi Historial de Préstamos
         {% endif %}
     </h2>
 
     <div class="library-card">
         <div class="table-responsive">
             <table class="table table-hover align-middle">
-                <thead>
+                <thead class="table-light">
                     <tr>
                         <th>Libro</th>
-                        {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
+                        {% if es_gestion %}
                             <th>Socio/Usuario</th>
+                            <th>Fecha</th>
+                        {% else %}
+                            <th>Fecha Préstamo</th>
                         {% endif %}
                         <th>Estado</th>
                         <th class="text-center">Acciones</th>
@@ -63,56 +85,105 @@
                 </thead>
                 <tbody>
                     {% for prestamo in prestamos %}
-                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: {{ forloop.counter0 }}0ms;">
-                        <td><strong>{{ prestamo.libro.titulo }}</strong></td>
-                        
-                        {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
-                            <td><i class="bi bi-person"></i> {{ prestamo.usuario.username }}</td>
-                        {% endif %}
-                        
+                    <tr class="animate__animated animate__fadeInUp" style="animation-delay: {{ forloop.counter0|add:"100" }}ms;">
                         <td>
-                            {% if prestamo.estado == 'p' %}
-                                <span class="badge bg-info text-dark">Prestado</span>
+                            <strong>{{ prestamo.libro.titulo }}</strong>
+                            <br>
+                            <small class="text-muted">por {{ prestamo.libro.autor }}</small>
+                        </td>
+
+                        {% if es_gestion %}
+                            <td>
+                                <i class="bi bi-person-fill"></i>
+                                {{ prestamo.usuario.get_full_name|default:prestamo.usuario.username }}
+                            </td>
+                            <td>{{ prestamo.fecha_prestamo|date:"d/m/Y" }}</td>
+                        {% else %}
+                            <td>{{ prestamo.fecha_prestamo|date:"d/m/Y" }}</td>
+                        {% endif %}
+
+                        <td>
+                            {% if prestamo.estado == 's' %}
+                                <span class="badge badge-solicitado rounded-pill">⏳ Solicitado</span>
+                            {% elif prestamo.estado == 'p' %}
+                                <span class="badge bg-info text-dark rounded-pill">📚 Prestado</span>
                             {% elif prestamo.estado == 'm' %}
-                                <span class="badge bg-danger">En Mora</span>
-                            {% else %}
-                                <span class="badge bg-success">Devuelto</span>
+                                <span class="badge bg-danger rounded-pill">⚠️ Multa / Retraso</span>
+                            {% elif prestamo.estado == 'd' %}
+                                <span class="badge bg-success rounded-pill">✓ Devuelto</span>
+                            {% elif prestamo.estado == 'r' %}
+                                <span class="badge badge-rechazado rounded-pill">✗ Rechazado</span>
+                            {% endif %}
+
+                            {% if prestamo.estado == 'p' and prestamo.fecha_max %}
+                                <br>
+                                <small class="text-muted" style="font-size: 0.75rem;">
+                                    Vence: {{ prestamo.fecha_max|date:"d/m/Y" }}
+                                </small>
                             {% endif %}
                         </td>
 
                         <td class="text-center">
-                            <div class="d-flex justify-content-center gap-2">
-                                {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
-                                    {% if not prestamo.fecha_devolucion %}
-                                        <a href="{% url 'devolver_libro' prestamo.id %}" class="btn btn-warning btn-action shadow-sm" title="Registrar Devolución">
+                            <div class="d-flex flex-wrap justify-content-center gap-2">
+
+                                {# Lógica para ADMINISTRADORES y BIBLIOTECARIOS #}
+                                {% if es_gestion %}
+
+                                    {# 1. Si está solicitado -> Botón Gestionar (Aprobar/Rechazar) #}
+                                    {% if prestamo.estado == 's' %}
+                                        <a href="{% url 'aprobar_prestamo' prestamo.id %}" 
+                                           class="btn btn-primary btn-action btn-sm">
+                                            👀 Gestionar
+                                        </a>
+                                    {% endif %}
+
+                                    {# 2. Si está prestado -> Botón Devolver #}
+                                    {% if prestamo.estado == 'p' %}
+                                        <a href="{% url 'devolver_libro' prestamo.id %}" 
+                                           class="btn btn-success btn-action btn-sm" 
+                                           title="Registrar Devolución">
                                             ↩️ Devolver
                                         </a>
                                     {% endif %}
-                                {% endif %}
-                                
-                                {% if user.is_superuser or user.groups.all.0.name == 'Administrador' or user.groups.all.0.name == 'Bibliotecario' %}
+
+                                    {# 3. Si está en mora -> Botón Multa #}
                                     {% if prestamo.estado == 'm' %}
-                                        <a href="{% url 'crear_multa' prestamo.id %}" class="btn btn-dark btn-action shadow-sm" title="Generar Multa">
-                                            ⚖️ Sancionar
+                                        <a href="{% url 'crear_multa' prestamo.id %}" 
+                                           class="btn btn-warning btn-action btn-sm" 
+                                           title="Gestionar Multa">
+                                            ⚖️ Multa
                                         </a>
+                                    {% endif %}
+
+                                    {# 4. Eliminar (SOLO Superadmin, como definimos en las views) #}
+                                    {% if user.is_superuser %}
+                                        <a href="{% url 'eliminar_prestamo' prestamo.pk %}" 
+                                           class="btn btn-outline-danger btn-action btn-sm" 
+                                           title="Eliminar del historial">
+                                            🗑️
+                                        </a>
+                                    {% endif %}
+
+                                {# Lógica para CLIENTES #}
+                                {% else %}
+                                    {% if prestamo.estado == 's' %}
+                                        <span class="text-muted small">Pendiente de aprobación</span>
+                                    {% elif prestamo.estado == 'r' %}
+                                        <span class="text-danger small">Rechazado</span>
+                                    {% else %}
+                                        <span class="text-success small">Activo</span>
                                     {% endif %}
                                 {% endif %}
 
-                                {% if user.is_superuser or user.groups.all.0.name == 'Administrador' %}
-                                    <a href="{% url 'eliminar_prestamo' prestamo.pk %}" class="btn btn-outline-danger btn-action" title="Eliminar Registro">
-                                        🗑️
-                                    </a>
-                                {% endif %}
-
-                                {% if user.groups.all.0.name == 'Cliente' %}
-                                    <span class="text-muted small italic">Sin acciones disponibles</span>
-                                {% endif %}
                             </div>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">No se encontraron registros de préstamos.</td>
+                        <td colspan="{% if es_gestion %}5{% else %}4{% endif %}" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1"></i><br>
+                            No hay préstamos registrados.
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -120,5 +191,4 @@
         </div>
     </div>
 </div>
-
 {% endblock %}

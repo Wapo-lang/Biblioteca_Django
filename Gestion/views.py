@@ -1,139 +1,90 @@
-from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth.decorators import login_required,user_passes_test
-from django.contrib.auth.models import User
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User, Group
 from django.utils import timezone
-from django.conf import settings
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login
+from django.contrib import messages
+from django.http import HttpResponseForbidden
+from django.views.generic import ListView, UpdateView, DeleteView, DetailView
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
+from django.urls import reverse_lazy
+from django.db.models import ProtectedError
+from .models import Autor, Libro, Prestamos, Multa
+from .forms import CrearEmpleadoForm
 import requests
 from io import BytesIO
 from PIL import Image
 from django.core.files.base import ContentFile
-from django.contrib import messages
-from django.contrib.auth.decorators import permission_required
-from .models import Autor, Libro, Prestamos, Multa
+from datetime import timedelta, date
+
+# --- FUNCIONES DE CHEQUEO DE GRUPOS ---
+def es_admin_o_bodega(user):
+    return user.is_superuser or user.groups.filter(name__in=['Administrador', 'Bodega']).exists()
+
+def es_gestion_prestamos(user):
+    # Admin y Bibliotecario pueden gestionar préstamos y multas
+    return user.is_superuser or user.groups.filter(name__in=['Administrador', 'Bibliotecario']).exists()
+
+def es_admin(user):
+    return user.is_superuser or user.groups.filter(name='Administrador').exists()
+
+# --- VISTAS ---
 
 def index(request):
-    title = settings.TITLE
-    return render(request, 'Gestion/templates/home.html', {'titulo': title})
+    return render(request, 'Gestion/templates/home.html')
 
 @login_required
-def lista_libros(request):
-    libros = Libro.objects.all()
-    return render(request, 'Gestion/templates/libros.html', {'libros': libros})
-
-@login_required
-@permission_required('Gestion.change_prestamos', raise_exception=True)
-def devolver_libro(request, prestamo_id):
-    prestamo = get_object_or_404(Prestamos, id=prestamo_id)
-    
-    if prestamo.fecha_devolucion:
-        messages.info(request, "Este libro ya fue marcado como devuelto.")
-        return redirect('lista_prestamos')
-
-    # 3. REGISTRO DE LA DEVOLUCIÓN
-    prestamo.fecha_devolucion = timezone.now().date()
-    
-    # 4. MANEJO DE STOCK (El libro regresa a la estantería)
-    libro = prestamo.libro
-    libro.ejemplares_disponibles += 1
-    libro.disponible = True
-    libro.save()
-
-# 5. CÁLCULO DE MORA AUTOMÁTICO
-    if prestamo.dias_retraso > 0:
-        prestamo.estado = 'm'
-        
-        # Guardamos el objeto 'multa_obj' y el booleano 'created'
-        multa_obj, created = Multa.objects.get_or_create(
-            prestamo=prestamo,
-            tipo_multa='retraso',
-            defaults={
-                'monto': prestamo.multa_total, # Aquí toma el valor calculado (ej: 2.50)
-                'fecha': timezone.now().date()
-            }
-        )
-        
-        # MEJORA: Mostramos el monto exacto en el mensaje
-        if created:
-            messages.warning(request, f"Devolución con retraso. Multa generada de ${multa_obj.monto}.")
-        else:
-            messages.info(request, f"Devolución con retraso. Ya existía una multa de ${multa_obj.monto}.")
-    else:
-        prestamo.estado = 'd'  # Estado: Devuelto
-        messages.success(request, f"Libro '{libro.titulo}' devuelto correctamente y a tiempo.")
-
-    # 6. GUARDAR EL PRÉSTAMO ACTUALIZADO
-    prestamo.save()
-    
-    return redirect('lista_prestamos')
-
-@login_required
-@permission_required('Gestion.add_libro', raise_exception=True)
+@user_passes_test(es_admin_o_bodega)
 def crear_libro(request):
     autores = Autor.objects.all()
     datos_api = {}
 
     if request.method == 'POST':
-        # --- ACCIÓN: BUSCAR EN OPEN LIBRARY ---
         if 'buscar_api' in request.POST:
             isbn = request.POST.get('isbn')
             url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
-            
             try:
                 response = requests.get(url)
                 data = response.json()
                 key = f"ISBN:{isbn}"
-
                 if key in data:
                     libro_info = data[key]
                     autores_api = libro_info.get('authors', [])
-                    
                     autor_id_final = None
                     if autores_api:
                         nombre_completo = autores_api[0].get('name')
                         partes = nombre_completo.split(' ', 1)
                         nom = partes[0]
                         ape = partes[1] if len(partes) > 1 else " "
-
-                        autor_obj, creado = Autor.objects.get_or_create(
-                            nombre=nom, 
-                            apellido=ape
-                        )
+                        autor_obj, creado = Autor.objects.get_or_create(nombre=nom, apellido=ape)
                         autor_id_final = autor_obj.id
-                        
                         if creado:
                             messages.info(request, f"Se ha registrado un nuevo autor: {nombre_completo}")
-
-                    # Generamos la URL de la portada para mostrarla en el HTML
+                    
                     portada_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
-
                     datos_api = {
                         'titulo': libro_info.get('title'),
                         'descripcion': libro_info.get('notes') or libro_info.get('description') or "Sin sinopsis.",
                         'isbn': isbn,
                         'autor_id': autor_id_final,
-                        'portada_url': portada_url 
+                        'portada_url': portada_url
                     }
                 else:
                     messages.error(request, "El ISBN no devolvió resultados.")
             except Exception as e:
                 messages.error(request, f"Error de conexión: {e}")
 
-        # --- ACCIÓN: GUARDAR LIBRO DEFINITIVAMENTE ---
         elif 'guardar_manual' in request.POST:
             titulo = request.POST.get('titulo')
             autor_id = request.POST.get('autor')
             isbn_final = request.POST.get('isbn_final')
             descripcion = request.POST.get('descripcion')
             cantidad = request.POST.get('cantidad', 1)
-            url_imagen = request.POST.get('portada_url_temp') # Viene del input oculto
+            url_imagen = request.POST.get('portada_url_temp')
 
             if titulo and autor_id:
                 autor = Autor.objects.get(id=autor_id)
-                
-                # Creamos la instancia sin guardar en BD aún
                 libro_instancia = Libro(
                     titulo=titulo,
                     autor=autor,
@@ -142,46 +93,33 @@ def crear_libro(request):
                     cantidad_total=cantidad,
                     disponible=True
                 )
-
-                # --- PROCESAMIENTO CON PILLOW ---
                 if url_imagen:
                     try:
                         res = requests.get(url_imagen, timeout=10)
                         if res.status_code == 200:
-                            # Abrimos la imagen con Pillow desde la memoria
                             img = Image.open(BytesIO(res.content))
-                            
-                            # Convertimos a RGB (por si es PNG o tiene otros formatos)
                             if img.mode != 'RGB':
                                 img = img.convert('RGB')
-                            
-                            # Guardamos en un buffer temporal
                             buffer = BytesIO()
                             img.save(buffer, format='JPEG', quality=85)
-                            
-                            # Guardamos el archivo en el modelo
                             nombre_foto = f"portada_{isbn_final}.jpg"
                             libro_instancia.portada.save(nombre_foto, ContentFile(buffer.getvalue()), save=False)
-                    except Exception as e:
-                        print(f"Error Pillow: {e}")
-
-                libro_instancia.save() # Guardado final en la base de datos
+                    except Exception:
+                        pass
+                libro_instancia.save()
                 messages.success(request, "¡Libro guardado con éxito!")
                 return redirect('libro_list')
 
-    autores = Autor.objects.all()
-    return render(request, 'Gestion/templates/templates_crear/crear_libro.html', {
-        'autores': autores,
-        'datos_api': datos_api
-    })
+    return render(request, 'Gestion/templates/templates_crear/crear_libro.html', {'autores': autores, 'datos_api': datos_api})
 
 def lista_autores(request):
     autores = Autor.objects.all()
     return render(request, 'Gestion/templates/autores.html', {'autores': autores})
 
 @login_required
-def crear_autor(request, id = None):
-    if id == None:
+@user_passes_test(es_admin_o_bodega)
+def crear_autor(request, id=None):
+    if id is None:
         autor = None
         nodo = 'Crear Autor'
     else:
@@ -192,8 +130,7 @@ def crear_autor(request, id = None):
         nombre = request.POST.get('nombre')
         apellido = request.POST.get('apellido')
         bibliografia = request.POST.get('bibliografia')
-        
-        if autor == None:
+        if autor is None:
             Autor.objects.create(nombre=nombre, apellido=apellido, bibliografia=bibliografia)
         else:
             autor.nombre = nombre
@@ -203,75 +140,85 @@ def crear_autor(request, id = None):
         return redirect('lista_autores')
     context = {
         'autor': autor,
-        'titulo': 'Editar Autor' if nodo == 'Editar Autor' else 'Crear Autor',
+        'titulo': nodo,
         'texto_boton': 'Guardar Cambios' if nodo == 'Editar Autor' else 'Crear Autor'
     }
     return render(request, 'Gestion/templates/templates_crear/crear_autor.html', context)
 
 @login_required
 def lista_prestamos(request):
+    # Variable 'es_gestion' para usar en el HTML y mostrar botones
     es_gestion = request.user.is_superuser or request.user.groups.filter(name__in=['Administrador', 'Bibliotecario']).exists()
-
+    
     if es_gestion:
-        # Los que gestionan ven la lista completa de todos los clientes
         prestamos = Prestamos.objects.all().order_by('-fecha_prestamo')
     else:
-        # Los Clientes (y Bodega, si entrara aquí) solo ven sus propios registros
         prestamos = Prestamos.objects.filter(usuario=request.user).order_by('-fecha_prestamo')
         
-    return render(request, 'Gestion/templates/prestamos.html', {'prestamos': prestamos})
+    return render(request, 'Gestion/templates/prestamos.html', {'prestamos': prestamos, 'es_gestion': es_gestion})
 
 @login_required
 def crear_prestamo(request):
-    # 1. Definir roles claramente
+    # Definimos quién es el usuario
     es_bibliotecario = request.user.is_superuser or request.user.groups.filter(name__in=['Administrador', 'Bibliotecario']).exists()
     es_cliente = request.user.groups.filter(name='Cliente').exists()
-
-    # 2. Seguridad: Si no es personal ni cliente, prohibido
+    
     if not (es_bibliotecario or es_cliente):
         return HttpResponseForbidden("No tienes permiso para solicitar préstamos.")
-
+        
     if request.method == 'POST':
         libro_id = request.POST.get('libro')
-        # Si el cliente no puede editar la fecha, usamos la de hoy
-        fecha_p = request.POST.get('fecha_prestamo') or timezone.now().date()
+        libro_obj = get_object_or_404(Libro, id=libro_id)
         
-        # 3. Identificar quién recibirá el libro
+        # 1. Validación de seguridad de stock (Incluso para solicitud, verificamos que haya algo que pedir)
+        if libro_obj.ejemplares_disponibles <= 0:
+            messages.error(request, f"Lo sentimos, el libro '{libro_obj.titulo}' no tiene stock disponible.")
+            return redirect('libro_list')
+
+        # 2. Definir lógica según rol
         if es_bibliotecario:
             usuario_id = request.POST.get('usuario')
             usuario_obj = get_object_or_404(User, id=usuario_id)
+            estado_inicial = 'p'  # Prestado (Aprobado directo)
+            fecha_p = request.POST.get('fecha_prestamo') or timezone.now().date()
         else:
-            usuario_obj = request.user # El cliente se asigna a sí mismo
-
-        libro_obj = get_object_or_404(Libro, id=libro_id)
-
-        # 4. Validar disponibilidad real antes de crear
-        if libro_obj.ejemplares_disponibles <= 0:
-            messages.error(request, f"Lo sentimos, el libro '{libro_obj.titulo}' ya no tiene ejemplares disponibles.")
-            return redirect('libro_list')
+            usuario_obj = request.user
+            estado_inicial = 's'  # Solicitado (No resta stock todavía)
+            fecha_p = timezone.now().date()
 
         try:
-            # 5. Crear el registro
-            Prestamos.objects.create(
-                libro=libro_obj, 
-                usuario=usuario_obj, 
+            # 3. Crear el objeto préstamo
+            prestamo = Prestamos.objects.create(
+                libro=libro_obj,
+                usuario=usuario_obj,
                 fecha_prestamo=fecha_p,
-                estado='p' # 'p' de pedido/pendiente
+                estado=estado_inicial
             )
             
-            # 6. Actualizar el stock del libro
-            libro_obj.ejemplares_disponibles -= 1
-            if libro_obj.ejemplares_disponibles == 0:
-                libro_obj.disponible = False
-            libro_obj.save()
+            # 4. Lógica de Stock: Solo si el bibliotecario lo crea (Estado 'p')
+            if estado_inicial == 'p':
+                # Restamos el ejemplar
+                libro_obj.ejemplares_disponibles -= 1
+                if libro_obj.ejemplares_disponibles == 0:
+                    libro_obj.disponible = False
+                libro_obj.save()
+                
+                # Calcular fecha de vencimiento (14 días después)
+                fecha_p_date = date.fromisoformat(str(fecha_p)) if isinstance(fecha_p, str) else fecha_p
+                prestamo.fecha_max = fecha_p_date + timedelta(days=14)
+                prestamo.save()
+                
+                messages.success(request, f"Préstamo registrado y stock actualizado. Entrega a: {usuario_obj.username}.")
+            else:
+                # Si es cliente, solo confirmamos la solicitud sin tocar el stock
+                messages.success(request, f"Solicitud para '{libro_obj.titulo}' enviada. Pendiente de aprobación.")
 
-            messages.success(request, "El préstamo se ha registrado correctamente.")
             return redirect('lista_prestamos')
-            
+
         except Exception as e:
             messages.error(request, f"Error al procesar el préstamo: {str(e)}")
 
-    # Preparación para el GET (Carga del formulario)
+    # Preparar datos para el formulario
     libros_disponibles = Libro.objects.filter(disponible=True, ejemplares_disponibles__gt=0)
     usuarios = User.objects.all() if es_bibliotecario else None
     
@@ -279,170 +226,213 @@ def crear_prestamo(request):
         'libros': libros_disponibles,
         'usuarios': usuarios,
         'es_bibliotecario': es_bibliotecario,
-        'today_date': timezone.now().date().isoformat() # Para el valor default del HTML
+        'today_date': timezone.now().date().strftime('%Y-%m-%d')
     }
+    return render(request, 'templates_crear/crear_prestamo.html', context)
+
+from django.db import transaction # Importante para la seguridad de los datos
+
+@login_required
+@user_passes_test(es_gestion_prestamos)
+def aprobar_prestamo(request, prestamo_id):
+    # Buscamos el préstamo asegurándonos que esté en estado 's' (solicitado)
+    prestamo = get_object_or_404(Prestamos, id=prestamo_id, estado='s')
+
+    if request.method == 'POST':
+        accion = request.POST.get('accion')
+        
+        if accion == 'aprobar':
+            # Usamos atomic para que si falla el save del prestamo, no se reste el libro (o viceversa)
+            with transaction.atomic():
+                libro = prestamo.libro
+                if libro.ejemplares_disponibles > 0:
+                    # 1. Actualizar el Préstamo
+                    prestamo.estado = 'p'
+                    prestamo.fecha_aprobacion = timezone.now().date()
+                    # Sincronizamos con tu otra función: 14 días de plazo
+                    prestamo.fecha_max = timezone.now().date() + timedelta(days=14)
+                    prestamo.save()
+
+                    # 2. Actualizar el Libro (Stock)
+                    libro.ejemplares_disponibles -= 1
+                    if libro.ejemplares_disponibles == 0:
+                        libro.disponible = False
+                    libro.save()
+
+                    messages.success(request, f"Préstamo aprobado para {prestamo.usuario.username}. Stock restante: {libro.ejemplares_disponibles}")
+                else:
+                    messages.error(request, f"No se puede aprobar: El libro '{libro.titulo}' se acaba de agotar.")
+        
+        elif accion == 'rechazar':
+            prestamo.estado = 'r'
+            prestamo.save()
+            messages.info(request, "La solicitud ha sido rechazada.")
+        
+        return redirect('lista_prestamos')
+
+    return render(request, 'templates_crear/aprobar_prestamo.html', {'prestamo': prestamo})
+
+@login_required
+@user_passes_test(es_gestion_prestamos)
+def devolver_libro(request, prestamo_id):
+    # Solo podemos devolver algo que esté marcado como 'Prestado'
+    prestamo = get_object_or_404(Prestamos, id=prestamo_id, estado='p')
     
-    return render(request, 'Gestion/templates/templates_crear/crear_prestamo.html', context)
-def detalle_prestamo(request):
-    pass
+    with transaction.atomic():
+        # 1. Registrar fecha de devolución real
+        prestamo.fecha_devolucion = timezone.now().date()
+        
+        # 2. Devolver stock al libro
+        libro = prestamo.libro
+        libro.ejemplares_disponibles += 1
+        libro.disponible = True  # Al sumar uno, siempre estará disponible
+        libro.save()
+        
+        # 3. Lógica de Multas
+        # Usamos prestamo.dias_retraso (asegúrate de que este método exista en tu modelo)
+        if prestamo.dias_retraso > 0:
+            # Estado 'm' (Devuelto con multa pendiente)
+            prestamo.estado = 'm'
+            
+            # Crear la multa en la base de datos
+            multa_obj, created = Multa.objects.get_or_create(
+                prestamo=prestamo,
+                tipo_multa='retraso',
+                defaults={
+                    'monto': prestamo.multa_total, # Asegúrate que multa_total sea un property o campo
+                    'fecha': timezone.now().date()
+                }
+            )
+            messages.warning(request, f"Devolución registrada con {prestamo.dias_retraso} días de retraso. Se ha generado una multa.")
+        else:
+            # Estado 'd' (Devuelto a tiempo)
+            prestamo.estado = 'd'
+            messages.success(request, f"Libro '{libro.titulo}' devuelto correctamente y a tiempo.")
+            
+        prestamo.save()
+        
+    return redirect('lista_prestamos')
 
 @login_required
 def lista_multa(request):
-    if request.user.is_staff:
-        # El Admin ve todas las multas y los préstamos pendientes de sanción
+    es_staff = request.user.is_superuser or request.user.groups.filter(name__in=['Administrador', 'Bibliotecario']).exists()
+    
+    if es_staff:
         multas_registradas = Multa.objects.all()
+        # Buscamos préstamos que estén en estado multa pero sin registro en tabla Multa
         prestamos_vencidos = Prestamos.objects.filter(estado='m', multas__isnull=True)
     else:
-        # El Usuario normal solo ve SUS multas ya procesadas
         multas_registradas = Multa.objects.filter(prestamo__usuario=request.user)
-        # Los usuarios no deberían ver "pendientes" de procesamiento administrativo
-        prestamos_vencidos = [] 
-    
+        prestamos_vencidos = []
+        
     return render(request, 'Gestion/templates/multas.html', {
         'multas': multas_registradas,
-        'pendientes': prestamos_vencidos
+        'pendientes': prestamos_vencidos,
+        'es_staff': es_staff
     })
 
-@user_passes_test(lambda u: u.groups.filter(name__in=['Administrador', 'Bibliotecario']).exists())
+@login_required
+@user_passes_test(es_gestion_prestamos)
+def crear_multa(request, prestamo_id):
+    prestamo = get_object_or_404(Prestamos, id=prestamo_id)
+    if request.method == 'POST':
+        tipo = request.POST.get('tipo_multa')
+        if tipo == 'retraso':
+            monto_sancion = prestamo.multa_total
+        else:
+            montos_fijos = {'deterioro': 5.00, 'perdida': 9.00}
+            monto_sancion = montos_fijos.get(tipo, 2.00)
+            
+        multa, creada = Multa.objects.get_or_create(
+            prestamo=prestamo,
+            tipo_multa=tipo,
+            defaults={'monto': monto_sancion, 'fecha': timezone.now()}
+        )
+        
+        # Ajustar stock si es pérdida
+        if tipo == 'perdida':
+             if prestamo.libro.cantidad_total > 0:
+                 prestamo.libro.cantidad_total -= 1
+             prestamo.libro.save()
+             prestamo.estado = 'm'
+        
+        # Ajustar devolución si es deterioro/retraso y no se ha devuelto
+        elif tipo in ['deterioro', 'retraso'] and not prestamo.fecha_devolucion:
+             prestamo.libro.ejemplares_disponibles += 1
+             prestamo.libro.disponible = True
+             prestamo.libro.save()
+             prestamo.fecha_devolucion = timezone.now().date()
+             prestamo.estado = 'm'
+
+        prestamo.save()
+        messages.success(request, f"Multa registrada: ${monto_sancion}")
+        return redirect('lista_multas')
+        
+    return render(request, 'Gestion/templates/templates_crear/crear_multa.html', {'prestamo': prestamo})
+
+@user_passes_test(es_gestion_prestamos)
 def pagar_multa(request, multa_id):
     multa = get_object_or_404(Multa, id=multa_id)
     multa.pagada = True
     multa.save()
-
-    prestamo = multa.prestamo
-    multas_pendientes = Multa.objects.filter(prestamo=prestamo, pagada=False).exists()
     
-    if not multas_pendientes:
-        prestamo.estado = 'd'
+    prestamo = multa.prestamo
+    if not Multa.objects.filter(prestamo=prestamo, pagada=False).exists():
+        prestamo.estado = 'd' # Devuelto y pagado
         prestamo.save()
-
-    messages.success(request, f"Multa de {prestamo.usuario.username} pagada. Estado actualizado.")
+        
+    messages.success(request, f"Multa de {prestamo.usuario.username} pagada.")
     return redirect('lista_multas')
 
-@login_required
-@permission_required('Gestion.add_multa', raise_exception=True)
-def crear_multa(request, prestamo_id):
-    prestamo = get_object_or_404(Prestamos, id=prestamo_id)
-    
-    if request.method == 'POST':
-        tipo = request.POST.get('tipo_multa')
-        
-        # --- CAMBIO AQUÍ: Lógica de montos dinámica ---
-        if tipo == 'retraso':
-            # Usamos el cálculo automático de tu modelo
-            monto_sancion = prestamo.multa_total 
-        else:
-            # Para los demás casos, usamos valores fijos
-            montos_fijos = {
-                'deterioro': 5.00,
-                'perdida': 9.00, 
-            }
-            monto_sancion = montos_fijos.get(tipo, 2.00)
-        # ----------------------------------------------
-
-        # Usar get_or_create para evitar duplicar multas del mismo tipo
-        multa, creada = Multa.objects.get_or_create(
-            prestamo=prestamo,
-            tipo_multa=tipo,
-            defaults={
-                'monto': monto_sancion,
-                'fecha': timezone.now()
-            }
-        )
-
-        if not creada:
-            messages.info(request, f"Ya existía una multa por {tipo} para este préstamo.")
-            return redirect('lista_multas')
-
-        # Lógica de Stock
-        if tipo == 'perdida':
-            if prestamo.libro.cantidad_total > 0:
-                prestamo.libro.cantidad_total -= 1
-            prestamo.libro.save()
-            prestamo.estado = 'm' 
-        
-        elif tipo == 'deterioro' or tipo == 'retraso':
-             # En ambos casos el libro regresa al inventario
-             if not prestamo.fecha_devolucion: # Solo si no se había devuelto ya
-                 prestamo.libro.ejemplares_disponibles += 1
-                 prestamo.libro.disponible = True
-                 prestamo.libro.save()
-             prestamo.estado = 'm'
-
-        # Cerramos el ciclo del préstamo
-        if not prestamo.fecha_devolucion:
-            prestamo.fecha_devolucion = timezone.now().date()
-        
-        prestamo.save()
-
-        messages.success(request, f"Multa por {tipo} registrada por ${monto_sancion}.")
-        return redirect('lista_multas') 
-
-    return render(request, 'Gestion/templates/templates_crear/crear_multa.html', {'prestamo': prestamo})
-
-from django.contrib.auth.models import Group
 def registro(request):
     if request.method == 'POST':
         form = UserCreationForm(request.POST)
         if form.is_valid():
             usuario = form.save()
-
             grupo_cliente = Group.objects.get(name='Cliente')
             usuario.groups.add(grupo_cliente)
-
             login(request, usuario)
             return redirect('index')
     else:
         form = UserCreationForm()
     return render(request, 'Gestion/templates/registration/registro.html', {'form': form})
 
-# views.py
-from .forms import CrearEmpleadoForm # Asegúrate de importar el form
-from django.contrib.auth.models import Group
-
-@user_passes_test(lambda u: u.is_superuser or u.groups.filter(name='Administrador').exists())
+@user_passes_test(es_admin)
 def crear_empleado(request):
     if request.method == 'POST':
         form = CrearEmpleadoForm(request.POST)
         if form.is_valid():
-            form.save()
-            messages.success(request, "Nuevo personal registrado con éxito.")
+            nuevo_user = form.save()
+            # Asignar grupo seleccionado
+            grupo = form.cleaned_data.get('grupo')
+            if grupo:
+                nuevo_user.groups.add(grupo)
+            messages.success(request, "Empleado registrado con éxito.")
             return redirect('index')
     else:
         form = CrearEmpleadoForm()
+        # Admin puede crear todo MENOS clientes
+        form.fields['grupo'].queryset = Group.objects.exclude(name='Cliente')
         
-        # FILTRO DE JERARQUÍA:
-        if request.user.is_superuser:
-            # Superusuario ve todo menos Clientes (que se registran solos)
-            form.fields['grupo'].queryset = Group.objects.exclude(name='Cliente')
-        else:
-            # Administrador SOLO puede crear Bibliotecarios y Bodega
-            form.fields['grupo'].queryset = Group.objects.filter(name__in=['Bibliotecario', 'Bodega'])
-            
     return render(request, 'admin_crear_empleado.html', {'form': form})
 
-# Create your views here.
-from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin, UserPassesTestMixin
-from django.urls import reverse_lazy
-from django.db.models import ProtectedError
+# --- MIXINS PARA CLASES ---
 
 class StaffBodegaMixin(UserPassesTestMixin):
+    """Permite acceso a Superusuario, Admin y Bodega para EDITAR LIBROS"""
     def test_func(self):
-        # El nombre debe coincidir EXACTAMENTE con tu script de roles: 'Bodega' o 'Administrador'
-        usuario = self.request.user
-        es_personal_bodega = usuario.groups.filter(name='Bodega').exists()
-        es_admin = usuario.groups.filter(name='Administrador').exists()
-        
-        # DEBUG: Mira tu terminal cuando intentes entrar
-        print(f"DEBUG: Usuario {usuario.username} - Bodega: {es_personal_bodega} - Admin: {es_admin}")
-        
-        return usuario.is_superuser or es_personal_bodega or es_admin
+        u = self.request.user
+        return u.is_superuser or u.groups.filter(name__in=['Administrador', 'Bodega']).exists()
 
     def handle_no_permission(self):
-        messages.error(self.request, "Tu perfil no tiene permisos de Bodega para realizar esta acción.")
-        return redirect('libro_list') # Redirige a la lista en lugar de Forbidden
-    
+        messages.error(self.request, "Acceso restringido a Bodega.")
+        return redirect('libro_list')
+
+class PrestamoAdminMixin(UserPassesTestMixin):
+    """Solo Admin puede eliminar historiales de prestamos"""
+    def test_func(self):
+        return self.request.user.is_superuser or self.request.user.groups.filter(name='Administrador').exists()
+
 class LibroDetalleView(LoginRequiredMixin, DetailView):
     model = Libro
     template_name = 'Gestion/templates/detalle_libro.html'
@@ -454,15 +444,9 @@ class LibroListView(LoginRequiredMixin, ListView):
     context_object_name = 'libros'
     paginate_by = 5
 
-class LibroCreateView(LoginRequiredMixin, StaffBodegaMixin, CreateView):
-    model = Libro
-    fields = ['titulo', 'autor', 'disponible'] # Asegúrate de que estos nombres existan en models.py
-    template_name = 'Gestion/templates_crear/crear_libro.html' 
-    success_url = reverse_lazy('libro_list')
-
 class LibroUpdateView(LoginRequiredMixin, StaffBodegaMixin, UpdateView):
     model = Libro
-    fields = ['titulo', 'autor']
+    fields = ['titulo', 'autor', 'descripcion', 'cantidad_total'] # Agrega los campos que necesites
     template_name = 'Gestion/templates/editar_libro.html'
     success_url = reverse_lazy('libro_list')
 
@@ -470,27 +454,22 @@ class LibroDeleteView(LoginRequiredMixin, StaffBodegaMixin, DeleteView):
     model = Libro
     template_name = 'Gestion/templates/eliminar_libro.html'
     success_url = reverse_lazy('libro_list')
-
+    
     def post(self, request, *args, **kwargs):
         try:
             return super().post(request, *args, **kwargs)
         except ProtectedError:
             messages.error(request, "No se puede eliminar: el libro tiene préstamos activos.")
             return redirect('libro_list')
-        
-class PrestamoDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+
+class PrestamoDeleteView(LoginRequiredMixin, PrestamoAdminMixin, DeleteView):
     model = Prestamos
     template_name = 'Gestion/templates/eliminar_prestamo.html'
     success_url = reverse_lazy('lista_prestamos')
-    permission_required = 'Gestion.delete_prestamos'
 
     def post(self, request, *args, **kwargs):
         try:
             return super().post(request, *args, **kwargs)
         except ProtectedError:
-            # Mensaje claro para el administrador
-            messages.error(request, 
-                "No se puede eliminar este préstamo porque tiene una MULTA asociada. "
-                "Primero debes eliminar la multa correspondiente en el panel de multas."
-            )
+            messages.error(request, "No se puede eliminar este préstamo, tiene multas asociadas.")
             return redirect('lista_prestamos')

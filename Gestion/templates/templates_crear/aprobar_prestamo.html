@@ -1,0 +1,22 @@
+{% extends "index.html" %}
+{% block contenido %}
+<div class="container mt-5">
+    <div class="card mx-auto shadow-lg" style="max-width: 500px; border-radius: 15px; border: 2px solid #d4b894;">
+        <div class="card-header text-white text-center" style="background: #5a3825; border-radius: 13px 13px 0 0;">
+            <h4>Revisar Solicitud de Préstamo</h4>
+        </div>
+        <div class="card-body" style="background: #fff9f1;">
+            <p><strong>Libro:</strong> {{ prestamo.libro.titulo }}</p>
+            <p><strong>Usuario:</strong> {{ prestamo.usuario.username }}</p>
+            <p><strong>Fecha Solicitud:</strong> {{ prestamo.fecha_prestamo|date:"d/m/Y" }}</p>
+            <hr>
+            <form method="POST" class="d-grid gap-2">
+                {% csrf_token %}
+                <button type="submit" name="accion" value="aprobar" class="btn btn-success">✅ Aprobar Préstamo</button>
+                <button type="submit" name="accion" value="rechazar" class="btn btn-danger">❌ Rechazar Solicitud</button>
+                <a href="{% url 'lista_prestamos' %}" class="btn btn-outline-secondary">Volver</a>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

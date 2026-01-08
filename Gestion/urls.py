@@ -5,10 +5,10 @@ from django.contrib.auth import views as auth_views
 urlpatterns = [
     path('', index, name ='index'),
 
-    # Libros (Vistas de Clase)
+    # Libros
     path('libros_list/', LibroListView.as_view(), name='libro_list'),
     path('libros/<int:pk>/', LibroDetalleView.as_view(), name='libro_detalle'),
-    path('libros/<int:pk>/editar/', LibroUpdateView.as_view(), name='libro_editar'),
+    path('libros/<int:pk>/editar/', LibroUpdateView.as_view(), name='libro_editar'), # Antes era libro_update en el template
     path('libros/<int:pk>/eliminar/', LibroDeleteView.as_view(), name='libro_eliminar'),
     path('libros/nuevo/', crear_libro, name='crear_libro'),
 
@@ -16,7 +16,6 @@ urlpatterns = [
     path('login/', auth_views.LoginView.as_view(), name='login'),
     path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
     path('registro/', registro, name='registro'),
-    # CAMBIO AQUÍ: Quitamos 'admin/' del inicio para evitar el Error 404
     path('personal/crear-empleado/', crear_empleado, name='crear_empleado'),
 
     # Autores
@@ -27,9 +26,11 @@ urlpatterns = [
     # Préstamos
     path('prestamos/', lista_prestamos, name='lista_prestamos'),
     path('prestamos/nuevo/', crear_prestamo, name='crear_prestamo'),
-    path('prestamos/<int:id>/', detalle_prestamo, name='detalle_prestamo'), # Corregido 'pretamos'
     path('prestamos/devolver/<int:prestamo_id>/', devolver_libro, name='devolver_libro'),
     path('prestamos/<int:pk>/eliminar/', PrestamoDeleteView.as_view(), name='eliminar_prestamo'),
+    
+    # ESTA ES LA QUE TE DABA EL ERROR (Faltaba definirla):
+    path('prestamos/aprobar/<int:prestamo_id>/', aprobar_prestamo, name='aprobar_prestamo'),
 
     # Multas
     path('multas/', lista_multa, name='lista_multas'),

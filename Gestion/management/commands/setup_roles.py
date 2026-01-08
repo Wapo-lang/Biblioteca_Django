@@ -38,8 +38,6 @@ class Command(BaseCommand):
         Group.objects.get(name='Bodega').permissions.set(perms_bodega)
 
         # 4. Asignar Permisos a BIBLIOTECARIO
-        # Ver libros, Gestionar Préstamos (CRUD), Gestionar Multas, Ver Autores
-        # NOTA: Usamos tus permisos custom 'Gestionar_prestamos' y los standard
         perms_biblio = Permission.objects.filter(
             content_type__in=[ct_libro, ct_prestamo, ct_multa, ct_autor],
             codename__in=[
