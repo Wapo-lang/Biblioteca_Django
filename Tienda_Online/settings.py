@@ -134,3 +134,9 @@ LOGOUT_REDIRECT_URL = 'login'
 import os
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+ODOO_URL = 'http://localhost:8069'  # Tu URL de Odoo
+ODOO_DB = 'basedatos'        # Nombre de la DB en Odoo
+ODOO_USER = 'admin'                 # Usuario Odoo
+ODOO_PASSWORD = 'admin'             # Contraseña Odoo
+ODOO_MODEL = 'biblioteca.libro'

@@ -17,6 +17,7 @@ from io import BytesIO
 from PIL import Image
 from django.core.files.base import ContentFile
 from datetime import timedelta, date
+from .utils import buscar_libro_odoo
 
 # --- FUNCIONES DE CHEQUEO DE GRUPOS ---
 def es_admin_o_bodega(user):
@@ -33,7 +34,6 @@ def es_admin(user):
 
 def index(request):
     return render(request, 'Gestion/templates/home.html')
-
 @login_required
 @user_passes_test(es_admin_o_bodega)
 def crear_libro(request):
@@ -41,76 +41,114 @@ def crear_libro(request):
     datos_api = {}
 
     if request.method == 'POST':
-        if 'buscar_api' in request.POST:
-            isbn = request.POST.get('isbn')
-            url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
-            try:
-                response = requests.get(url)
-                data = response.json()
-                key = f"ISBN:{isbn}"
-                if key in data:
-                    libro_info = data[key]
-                    autores_api = libro_info.get('authors', [])
-                    autor_id_final = None
-                    if autores_api:
-                        nombre_completo = autores_api[0].get('name')
-                        partes = nombre_completo.split(' ', 1)
-                        nom = partes[0]
-                        ape = partes[1] if len(partes) > 1 else " "
-                        autor_obj, creado = Autor.objects.get_or_create(nombre=nom, apellido=ape)
-                        autor_id_final = autor_obj.id
-                        if creado:
-                            messages.info(request, f"Se ha registrado un nuevo autor: {nombre_completo}")
-                    
-                    portada_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
-                    datos_api = {
-                        'titulo': libro_info.get('title'),
-                        'descripcion': libro_info.get('notes') or libro_info.get('description') or "Sin sinopsis.",
-                        'isbn': isbn,
-                        'autor_id': autor_id_final,
-                        'portada_url': portada_url
-                    }
-                else:
-                    messages.error(request, "El ISBN no devolvió resultados.")
-            except Exception as e:
-                messages.error(request, f"Error de conexión: {e}")
+        # --- CASO 1: BÚSQUEDA (WEB O ODOO) ---
+        # Estas opciones NO guardan en la DB de Libros, solo traen datos al form
+        if 'buscar_api' in request.POST or 'buscar_odoo' in request.POST:
+            isbn = request.POST.get('isbn_final', '').strip() # Leemos del input principal
+            
+            if not isbn:
+                messages.warning(request, "Por favor, ingresa un ISBN para buscar.")
+            else:
+                # Lógica Open Library
+                if 'buscar_api' in request.POST:
+                    url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
+                    try:
+                        response = requests.get(url, timeout=10)
+                        data = response.json()
+                        key = f"ISBN:{isbn}"
+                        if key in data:
+                            libro_info = data[key]
+                            # ... (Lógica de autor simplificada para el ejemplo)
+                            datos_api = {
+                                'titulo': libro_info.get('title'),
+                                'descripcion': libro_info.get('notes') or libro_info.get('description') or "Sin sinopsis.",
+                                'isbn': isbn,
+                                'portada_url': f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
+                            }
+                        else:
+                            messages.error(request, "ISBN no encontrado en Open Library.")
+                    except: messages.error(request, "Error de conexión con la Web.")
 
+                # Lógica Odoo
+                elif 'buscar_odoo' in request.POST:
+                    try:
+                        data = buscar_libro_odoo(isbn)
+                        if data:
+                            # Sincronizar autor...
+                            nom_completo = data.get('autor_nombre', 'Desconocido')
+                            partes = nom_completo.split(' ', 1)
+                            nom = partes[0]
+                            ape = partes[1] if len(partes) > 1 else " "
+                            autor_obj, _ = Autor.objects.get_or_create(nombre=nom, apellido=ape)
+                            
+                            datos_api = {
+                                'titulo': data.get('titulo'),
+                                'descripcion': data.get('descripcion'),
+                                'isbn': isbn,
+                                'autor_id': autor_obj.id
+                            }
+                        else:
+                            messages.error(request, "Libro no encontrado en Odoo.")
+                    except: messages.error(request, "Error de conexión con Odoo.")
+
+        # --- CASO 2: GUARDAR DEFINITIVAMENTE ---
         elif 'guardar_manual' in request.POST:
-            titulo = request.POST.get('titulo')
+            titulo = request.POST.get('titulo', '').strip()
             autor_id = request.POST.get('autor')
-            isbn_final = request.POST.get('isbn_final')
+            isbn_final = request.POST.get('isbn_final', '').strip()
             descripcion = request.POST.get('descripcion')
             cantidad = request.POST.get('cantidad', 1)
             url_imagen = request.POST.get('portada_url_temp')
 
-            if titulo and autor_id:
-                autor = Autor.objects.get(id=autor_id)
-                libro_instancia = Libro(
-                    titulo=titulo,
-                    autor=autor,
-                    isbn=isbn_final,
-                    descripcion=descripcion,
-                    cantidad_total=cantidad,
-                    disponible=True
-                )
-                if url_imagen:
-                    try:
-                        res = requests.get(url_imagen, timeout=10)
-                        if res.status_code == 200:
-                            img = Image.open(BytesIO(res.content))
-                            if img.mode != 'RGB':
-                                img = img.convert('RGB')
-                            buffer = BytesIO()
-                            img.save(buffer, format='JPEG', quality=85)
-                            nombre_foto = f"portada_{isbn_final}.jpg"
-                            libro_instancia.portada.save(nombre_foto, ContentFile(buffer.getvalue()), save=False)
-                    except Exception:
-                        pass
-                libro_instancia.save()
-                messages.success(request, "¡Libro guardado con éxito!")
-                return redirect('libro_list')
+            # --- VALIDACIONES ANTES DE GUARDAR ---
+            
+            # 1. Validar si el ISBN ya existe (Evita el IntegrityError)
+            if isbn_final and Libro.objects.filter(isbn=isbn_final).exists():
+                libro_db = Libro.objects.get(isbn=isbn_final)
+                messages.error(request, f"EL LIBRO YA ESTÁ REGISTRADO: El ISBN {isbn_final} pertenece a '{libro_db.titulo}'.")
+                # Devolvemos los datos para que no se borre el formulario
+                datos_api = {'titulo': titulo, 'isbn': isbn_final, 'descripcion': descripcion, 'autor_id': int(autor_id) if autor_id else None}
+            
+            # 2. Validar campos obligatorios
+            elif not titulo or not autor_id or not isbn_final:
+                messages.error(request, "Error: Título, Autor e ISBN son obligatorios.")
+                datos_api = {'titulo': titulo, 'isbn': isbn_final, 'descripcion': descripcion, 'autor_id': int(autor_id) if autor_id else None}
+            
+            # 3. Si todo está OK, guardamos
+            else:
+                try:
+                    autor_obj = Autor.objects.get(id=autor_id)
+                    nuevo_libro = Libro(
+                        titulo=titulo,
+                        autor=autor_obj,
+                        isbn=isbn_final,
+                        descripcion=descripcion,
+                        cantidad_total=cantidad,
+                        ejemplares_disponibles=cantidad
+                    )
+                    
+                    # Lógica de imagen...
+                    if url_imagen:
+                        try:
+                            res = requests.get(url_imagen, timeout=5)
+                            if res.status_code == 200:
+                                img = Image.open(BytesIO(res.content))
+                                if img.mode != 'RGB': img = img.convert('RGB')
+                                buffer = BytesIO()
+                                img.save(buffer, format='JPEG', quality=85)
+                                nuevo_libro.portada.save(f"portada_{isbn_final}.jpg", ContentFile(buffer.getvalue()), save=False)
+                        except: pass
 
-    return render(request, 'Gestion/templates/templates_crear/crear_libro.html', {'autores': autores, 'datos_api': datos_api})
+                    nuevo_libro.save()
+                    messages.success(request, f"¡'{titulo}' guardado exitosamente!")
+                    return redirect('libro_list')
+                except Exception as e:
+                    messages.error(request, f"Error crítico: {e}")
+
+    return render(request, 'Gestion/templates/templates_crear/crear_libro.html', {
+        'autores': autores, 
+        'datos_api': datos_api
+    })
 
 def lista_autores(request):
     autores = Autor.objects.all()
