@@ -66,12 +66,20 @@
         background-color: #6d4828;
         color: #fff;
     }
-
-    .badge-info-odoo {
-        background-color: #198754;
-        font-size: 0.75rem;
+.isbn-section {
+        background: #fdf5e6;
+        border-bottom: 2px dashed #d4b894;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+    }
+    
+    .badge-isbn {
+        background-color: #5c422e;
+        font-size: 0.8rem;
+        margin-bottom: 5px;
+        display: inline-block;
         padding: 5px 10px;
-        border-radius: 50px;
+        border-radius: 4px;
         color: white;
     }
 </style>
@@ -80,28 +88,16 @@
     <h2 class="mb-4 text-center library-title">📘 Registro de Nuevo Ejemplar</h2>
 
     <div class="card library-card p-4">
+
         <form method="POST">
             {% csrf_token %}
             
             <div class="mb-3">
                 <label class="form-label">ISBN del Libro:</label>
                 <div class="input-group">
-                    <input type="text" name="isbn" class="form-control" value="{{ datos_api.isbn|default:'' }}" placeholder="Ej: 9781234567890">
-                    
-                    <button type="submit" name="buscar_api" class="btn btn-outline-secondary" formnovalidate>🔍 Web</button>
-                    
-                    <button type="submit" name="buscar_odoo" class="btn btn-outline-success" formnovalidate>🏢 Odoo</button>
+                    <input type="text" name="isbn" class="form-control" value="{{ datos_api.isbn }}">
+                    <button type="submit" name="buscar_api" class="btn btn-outline-secondary">🔍 Buscar</button>
                 </div>
-
-                {% if datos_api.titulo %}
-                    <div class="mt-2">
-                        {% if datos_api.portada_url %}
-                            <span class="badge bg-info text-dark">🌐 Datos de OpenLibrary</span>
-                        {% else %}
-                            <span class="badge badge-info-odoo">🏢 Datos de Odoo ERP</span>
-                        {% endif %}
-                    </div>
-                {% endif %}
             </div>
 
             {% if datos_api.portada_url %}
@@ -114,17 +110,17 @@
 
             <div class="mb-3">
                 <label class="form-label">Título:</label>
-                <input type="text" name="titulo" class="form-control" value="{{ datos_api.titulo|default:'' }}" required>
+                <input type="text" name="titulo" class="form-control" value="{{ datos_api.titulo }}">
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Descripción / Sinopsis:</label>
-                <textarea name="descripcion" class="form-control" rows="3">{{ datos_api.descripcion|default:'' }}</textarea>
+                <textarea name="descripcion" class="form-control">{{ datos_api.descripcion }}</textarea>
             </div>
 
             <div class="mb-3">
                 <label class="form-label">Autor:</label>
-                <select name="autor" class="form-select" required>
+                <select name="autor" class="form-select">
                     <option value="">-- Seleccione un autor --</option>
                     {% for autor in autores %}
                         <option value="{{ autor.id }}" {% if datos_api.autor_id == autor.id %}selected{% endif %}>
@@ -133,15 +129,13 @@
                     {% endfor %}
                 </select>
             </div>
-
             <div class="mb-3">
                 <label class="form-label">Cantidad de Ejemplares:</label>
                 <input type="number" name="cantidad" class="form-control" value="1" min="1">
                 <small class="text-muted">Indique cuántos libros físicos está ingresando al sistema.</small>
             </div>            
 
-            <input type="hidden" name="isbn_final" value="{{ datos_api.isbn|default:'' }}">
-            
+            <input type="hidden" name="isbn_final" value="{{ datos_api.isbn }}">
             <button type="submit" name="guardar_manual" class="btn btn-library w-100">Guardar Libro 📚</button>
         </form>
     </div>
