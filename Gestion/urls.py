@@ -1,9 +1,19 @@
-from django.urls import path
+from django.urls import path, include
 from .views import *
 from django.contrib.auth import views as auth_views
+from rest_framework.routers import DefaultRouter
+from rest_framework.authtoken.views import obtain_auth_token
+from .api_views import LibroViewSet, AutorViewSet
+
+router = DefaultRouter()
+router.register(r'libros-api', LibroViewSet, basename='libros-api')
+router.register(r'autores-api', AutorViewSet, basename='autores-api')
 
 urlpatterns = [
     path('', index, name ='index'),
+
+    path('api/', include(router.urls)),
+    path('api-token-auth/', obtain_auth_token, name='api_token_auth'),
 
     # Libros
     path('libros_list/', LibroListView.as_view(), name='libro_list'),

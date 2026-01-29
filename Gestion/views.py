@@ -17,6 +17,9 @@ from io import BytesIO
 from PIL import Image
 from django.core.files.base import ContentFile
 from datetime import timedelta, date
+from django.db import IntegrityError
+import re
+
 
 # --- FUNCIONES DE CHEQUEO DE GRUPOS ---
 def es_admin_o_bodega(user):
@@ -39,6 +42,7 @@ def index(request):
 def crear_libro(request):
     autores = Autor.objects.all()
     datos_api = {}
+    template_ruta = 'Gestion/templates/templates_crear/crear_libro.html'
 
     if request.method == 'POST':
         if 'buscar_api' in request.POST:
@@ -78,12 +82,30 @@ def crear_libro(request):
         elif 'guardar_manual' in request.POST:
             titulo = request.POST.get('titulo')
             autor_id = request.POST.get('autor')
-            isbn_final = request.POST.get('isbn_final')
+            isbn_input = request.POST.get('isbn_final', '')
             descripcion = request.POST.get('descripcion')
             cantidad = request.POST.get('cantidad', 1)
             url_imagen = request.POST.get('portada_url_temp')
 
+            # 1. LIMPIEZA Y VALIDACIÓN DE ISBN
+            isbn_final = re.sub(r'[-\s]', '', isbn_input)
+
+            if len(isbn_final) not in [10, 13] or not isbn_final.isdigit():
+                messages.error(request, "El ISBN debe tener exactamente 10 o 13 dígitos numéricos.")
+                return render(request, template_ruta, { 
+                    'autores': autores,
+                    'datos_api': {'titulo': titulo, 'isbn': isbn_input, 'descripcion': descripcion, 'autor_id': int(autor_id or 0)}
+                })
+
             if titulo and autor_id:
+                # 2. VERIFICACIÓN DE DUPLICADOS
+                if Libro.objects.filter(isbn=isbn_final).exists():
+                    messages.error(request, f"El ISBN {isbn_final} ya está registrado.")
+                    return render(request, template_ruta, {
+                        'autores': autores,
+                        'datos_api': {'titulo': titulo, 'isbn': isbn_final, 'autor_id': int(autor_id)}
+                    })
+
                 autor = Autor.objects.get(id=autor_id)
                 libro_instancia = Libro(
                     titulo=titulo,
@@ -93,25 +115,33 @@ def crear_libro(request):
                     cantidad_total=cantidad,
                     disponible=True
                 )
+                
                 if url_imagen:
                     try:
                         res = requests.get(url_imagen, timeout=10)
                         if res.status_code == 200:
                             img = Image.open(BytesIO(res.content))
-                            if img.mode != 'RGB':
-                                img = img.convert('RGB')
+                            if img.mode != 'RGB': img = img.convert('RGB')
                             buffer = BytesIO()
                             img.save(buffer, format='JPEG', quality=85)
                             nombre_foto = f"portada_{isbn_final}.jpg"
                             libro_instancia.portada.save(nombre_foto, ContentFile(buffer.getvalue()), save=False)
-                    except Exception:
-                        pass
-                libro_instancia.save()
-                messages.success(request, "¡Libro guardado con éxito!")
-                return redirect('libro_list')
+                    except Exception: pass
 
-    return render(request, 'Gestion/templates/templates_crear/crear_libro.html', {'autores': autores, 'datos_api': datos_api})
+                # 3. GUARDADO FINAL CON TRY/EXCEPT
+                try:
+                    libro_instancia.save()
+                    messages.success(request, "¡Libro guardado con éxito!")
+                    return redirect('libro_list')
+                except IntegrityError:
+                    messages.error(request, "Error de integridad: El ISBN ya existe.")
+                    return render(request, template_ruta, {
+                        'autores': autores, 
+                        'datos_api': {'titulo': titulo, 'isbn': isbn_final}
+                    })
 
+    # Este return DEBE estar aquí, fuera de los bloques IF anteriores
+    return render(request, template_ruta, {'autores': autores, 'datos_api': datos_api})
 def lista_autores(request):
     autores = Autor.objects.all()
     return render(request, 'Gestion/templates/autores.html', {'autores': autores})
@@ -127,22 +157,43 @@ def crear_autor(request, id=None):
         nodo = 'Editar Autor'
 
     if request.method == 'POST':
-        nombre = request.POST.get('nombre')
-        apellido = request.POST.get('apellido')
-        bibliografia = request.POST.get('bibliografia')
-        if autor is None:
-            Autor.objects.create(nombre=nombre, apellido=apellido, bibliografia=bibliografia)
-        else:
-            autor.nombre = nombre
-            autor.apellido = apellido
-            autor.bibliografia = bibliografia
-            autor.save()
-        return redirect('lista_autores')
+        # 1. Recolección y limpieza básica
+        nombre = request.POST.get('nombre', '').strip()
+        apellido = request.POST.get('apellido', '').strip()
+        bibliografia = request.POST.get('bibliografia', '').strip()
+
+        # 2. Lógica de guardado con manejo de errores
+        try:
+            if autor is None:
+                # Verificamos manualmente antes de crear para dar un mensaje amigable
+                if Autor.objects.filter(nombre__iexact=nombre, apellido__iexact=apellido).exists():
+                    messages.error(request, f"El autor '{nombre} {apellido}' ya existe.")
+                else:
+                    Autor.objects.create(nombre=nombre, apellido=apellido, bibliografia=bibliografia)
+                    messages.success(request, "Autor creado con éxito.")
+                    return redirect('lista_autores')
+            else:
+                autor.nombre = nombre
+                autor.apellido = apellido
+                autor.bibliografia = bibliografia
+                autor.save()
+                messages.success(request, "Autor actualizado con éxito.")
+                return redirect('lista_autores')
+                
+        except IntegrityError:
+            # Este es el "seguro de vida" por si la base de datos rechaza el duplicado
+            messages.error(request, "Error: Ya existe un autor con ese nombre y apellido.")
+
+    # 3. Contexto para el template (mantenemos los datos si hubo error)
     context = {
         'autor': autor,
         'titulo': nodo,
-        'texto_boton': 'Guardar Cambios' if nodo == 'Editar Autor' else 'Crear Autor'
+        'nombre_ingresado': request.POST.get('nombre', '') if request.method == 'POST' else (autor.nombre if autor else ''),
+        'apellido_ingresado': request.POST.get('apellido', '') if request.method == 'POST' else (autor.apellido if autor else ''),
+        'biblio_ingresada': request.POST.get('bibliografia', '') if request.method == 'POST' else (autor.bibliografia if autor else ''),
+        'texto_boton': 'Guardar Cambios' if id else 'Crear Autor'
     }
+    
     return render(request, 'Gestion/templates/templates_crear/crear_autor.html', context)
 
 @login_required

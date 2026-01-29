@@ -2,15 +2,14 @@
 
 {% block contenido %}
 
-<!-- Estilos personalizados estilo biblioteca -->
 <style>
     body {
-        background: #f4eee0; /* beige suave */
+        background: #f4eee0;
         font-family: "Georgia", serif;
     }
 
     .library-title {
-        color: #5a3825; /* café oscuro */
+        color: #5a3825;
         font-weight: bold;
         text-shadow: 1px 1px #d6c1a5;
     }
@@ -24,7 +23,6 @@
         overflow: hidden;
     }
 
-    /* Efecto "madera" en el borde superior */
     .library-card::before {
         content: "";
         width: 100%;
@@ -53,18 +51,25 @@
     }
 </style>
 
-<div class="container mt-4">
+<div class="container mt-4" style="max-width: 600px;">
 
     <h2 class="mb-4 library-title text-center">
-        📖 {{ titulo }}
+        📖 {{ titulo|default:"Registrar Autor" }}
     </h2>
 
-    <div class="card library-card p-4">
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert {% if message.tags == 'error' %}alert-danger{% else %}alert-info{% endif %} alert-dismissible fade show shadow-sm" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    {% endif %}
 
+    <div class="card library-card p-4">
         <form method="POST">
             {% csrf_token %}
 
-            <!-- Nombre -->
             <div class="mb-3">
                 <label for="id_nombre" class="form-label">Nombre del Autor:</label>
                 <input 
@@ -72,12 +77,11 @@
                     id="id_nombre" 
                     name="nombre"
                     class="form-control"
-                    value="{{ autor.nombre|default_if_none:'' }}" 
+                    value="{{ nombre_ingresado|default:'' }}" 
                     required
                 >
             </div>
 
-            <!-- Apellido -->
             <div class="mb-3">
                 <label for="id_apellido" class="form-label">Apellido:</label>
                 <input 
@@ -85,28 +89,30 @@
                     id="id_apellido" 
                     name="apellido"
                     class="form-control"
-                    value="{{ autor.apellido|default_if_none:'' }}" 
+                    value="{{ apellido_ingresado|default:'' }}" 
                     required
                 >
             </div>
 
-            <!-- Bibliografía -->
             <div class="mb-3">
                 <label for="id_bibliografia" class="form-label">Bibliografía:</label>
                 <textarea 
                     id="id_bibliografia" 
                     name="bibliografia"
                     class="form-control" 
-                    rows="3" 
-                    required>{{ autor.bibliografia|default_if_none:'' }}</textarea>
+                    rows="3">{{ biblio_ingresada|default:'' }}</textarea>
             </div>
 
-            <!-- Botón -->
-            <button type="submit" class="btn btn-library w-100">
+            <button type="submit" class="btn btn-library w-100 py-2">
                 Guardar Autor 📚
             </button>
-
         </form>
+    </div>
+
+    <div class="text-center mt-3">
+        <a href="{% url 'lista_autores' %}" class="text-decoration-none" style="color: #8b5e34;">
+            <i class="bi bi-arrow-left"></i> Volver a la lista de autores
+        </a>
     </div>
 </div>
 
