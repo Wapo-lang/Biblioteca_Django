@@ -18,7 +18,7 @@ urlpatterns = [
     # Libros
     path('libros_list/', LibroListView.as_view(), name='libro_list'),
     path('libros/<int:pk>/', LibroDetalleView.as_view(), name='libro_detalle'),
-    path('libros/<int:pk>/editar/', LibroUpdateView.as_view(), name='libro_editar'), # Antes era libro_update en el template
+    path('libros/<int:pk>/editar/', LibroUpdateView.as_view(), name='libro_editar'),
     path('libros/<int:pk>/eliminar/', LibroDeleteView.as_view(), name='libro_eliminar'),
     path('libros/nuevo/', crear_libro, name='crear_libro'),
 

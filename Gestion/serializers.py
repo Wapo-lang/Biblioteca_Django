@@ -8,7 +8,6 @@ class AutorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, data):
-        # Normalizamos a mayúsculas/minúsculas para evitar "Cervantes" vs "cervantes"
         nombre = data.get('nombre', self.instance.nombre if self.instance else '').strip()
         apellido = data.get('apellido', self.instance.apellido if self.instance else '').strip()
 
@@ -28,8 +27,6 @@ class AutorSerializer(serializers.ModelSerializer):
         return data
 
 class LibroSerializer(serializers.ModelSerializer):
-    # 'autor' recibe el ID (para crear/editar)
-    # 'autor_detalle' devuelve el objeto completo (para mostrar en la web)
     autor_detalle = AutorSerializer(source='autor', read_only=True)
     
     class Meta:
@@ -39,8 +36,6 @@ class LibroSerializer(serializers.ModelSerializer):
             'autor', 'autor_detalle', 'cantidad_total', 
             'ejemplares_disponibles', 'disponible'
         ]
-        # IMPORTANTE: Esto permite que Odoo envíe el ISBN en un PUT 
-        # sin que Django diga "este ISBN ya existe"
         extra_kwargs = {
             'isbn': {'validators': []} 
         }

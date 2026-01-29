@@ -45,103 +45,105 @@ def crear_libro(request):
     template_ruta = 'Gestion/templates/templates_crear/crear_libro.html'
 
     if request.method == 'POST':
+        # --- BLOQUE 1: BUSQUEDA EN API ---
         if 'buscar_api' in request.POST:
-            isbn = request.POST.get('isbn')
+            isbn = request.POST.get('isbn', '').strip()
             url = f"https://openlibrary.org/api/books?bibkeys=ISBN:{isbn}&format=json&jscmd=data"
             try:
-                response = requests.get(url)
+                response = requests.get(url, timeout=10)
                 data = response.json()
                 key = f"ISBN:{isbn}"
                 if key in data:
                     libro_info = data[key]
                     autores_api = libro_info.get('authors', [])
                     autor_id_final = None
+                    
                     if autores_api:
                         nombre_completo = autores_api[0].get('name')
                         partes = nombre_completo.split(' ', 1)
                         nom = partes[0]
-                        ape = partes[1] if len(partes) > 1 else " "
+                        ape = partes[1] if len(partes) > 1 else "."
+                        # Buscamos o creamos al autor para tener el ID listo
                         autor_obj, creado = Autor.objects.get_or_create(nombre=nom, apellido=ape)
                         autor_id_final = autor_obj.id
                         if creado:
-                            messages.info(request, f"Se ha registrado un nuevo autor: {nombre_completo}")
+                            messages.info(request, f"Nuevo autor registrado: {nombre_completo}")
                     
-                    portada_url = f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
                     datos_api = {
                         'titulo': libro_info.get('title'),
                         'descripcion': libro_info.get('notes') or libro_info.get('description') or "Sin sinopsis.",
                         'isbn': isbn,
                         'autor_id': autor_id_final,
-                        'portada_url': portada_url
+                        'portada_url': f"https://covers.openlibrary.org/b/isbn/{isbn}-L.jpg"
                     }
                 else:
-                    messages.error(request, "El ISBN no devolvió resultados.")
+                    messages.error(request, "El ISBN no devolvió resultados en Open Library.")
             except Exception as e:
-                messages.error(request, f"Error de conexión: {e}")
+                messages.error(request, f"Error de conexión con la API: {e}")
 
+        # --- BLOQUE 2: GUARDADO MANUAL ---
         elif 'guardar_manual' in request.POST:
             titulo = request.POST.get('titulo')
             autor_id = request.POST.get('autor')
             isbn_input = request.POST.get('isbn_final', '')
             descripcion = request.POST.get('descripcion')
-            cantidad = request.POST.get('cantidad', 1)
             url_imagen = request.POST.get('portada_url_temp')
+            
+            # CORRECCIÓN CLAVE: Convertir cantidad a entero aquí
+            try:
+                cantidad = int(request.POST.get('cantidad', 1) or 1)
+            except ValueError:
+                cantidad = 1
 
-            # 1. LIMPIEZA Y VALIDACIÓN DE ISBN
             isbn_final = re.sub(r'[-\s]', '', isbn_input)
 
+            # Validaciones básicas
             if len(isbn_final) not in [10, 13] or not isbn_final.isdigit():
                 messages.error(request, "El ISBN debe tener exactamente 10 o 13 dígitos numéricos.")
-                return render(request, template_ruta, { 
-                    'autores': autores,
-                    'datos_api': {'titulo': titulo, 'isbn': isbn_input, 'descripcion': descripcion, 'autor_id': int(autor_id or 0)}
-                })
+                return render(request, template_ruta, {'autores': autores, 'datos_api': datos_api})
 
             if titulo and autor_id:
-                # 2. VERIFICACIÓN DE DUPLICADOS
                 if Libro.objects.filter(isbn=isbn_final).exists():
                     messages.error(request, f"El ISBN {isbn_final} ya está registrado.")
-                    return render(request, template_ruta, {
-                        'autores': autores,
-                        'datos_api': {'titulo': titulo, 'isbn': isbn_final, 'autor_id': int(autor_id)}
-                    })
+                    return render(request, template_ruta, {'autores': autores, 'datos_api': datos_api})
 
-                autor = Autor.objects.get(id=autor_id)
-                libro_instancia = Libro(
-                    titulo=titulo,
-                    autor=autor,
-                    isbn=isbn_final,
-                    descripcion=descripcion,
-                    cantidad_total=cantidad,
-                    disponible=True
-                )
-                
-                if url_imagen:
-                    try:
-                        res = requests.get(url_imagen, timeout=10)
-                        if res.status_code == 200:
-                            img = Image.open(BytesIO(res.content))
-                            if img.mode != 'RGB': img = img.convert('RGB')
-                            buffer = BytesIO()
-                            img.save(buffer, format='JPEG', quality=85)
-                            nombre_foto = f"portada_{isbn_final}.jpg"
-                            libro_instancia.portada.save(nombre_foto, ContentFile(buffer.getvalue()), save=False)
-                    except Exception: pass
-
-                # 3. GUARDADO FINAL CON TRY/EXCEPT
                 try:
+                    autor = Autor.objects.get(id=autor_id)
+                    libro_instancia = Libro(
+                        titulo=titulo,
+                        autor=autor,
+                        isbn=isbn_final,
+                        descripcion=descripcion,
+                        cantidad_total=cantidad, # Ahora es un INT seguro
+                        ejemplares_disponibles=cantidad, # Lo inicializamos igual
+                        disponible=True
+                    )
+                    
+                    # Manejo de imagen de portada
+                    if url_imagen:
+                        try:
+                            res = requests.get(url_imagen, timeout=10)
+                            if res.status_code == 200:
+                                img = Image.open(BytesIO(res.content))
+                                if img.mode != 'RGB': img = img.convert('RGB')
+                                buffer = BytesIO()
+                                img.save(buffer, format='JPEG', quality=85)
+                                libro_instancia.portada.save(f"portada_{isbn_final}.jpg", ContentFile(buffer.getvalue()), save=False)
+                        except Exception: pass
+
+                    # GUARDADO FINAL
                     libro_instancia.save()
                     messages.success(request, "¡Libro guardado con éxito!")
                     return redirect('libro_list')
-                except IntegrityError:
-                    messages.error(request, "Error de integridad: El ISBN ya existe.")
-                    return render(request, template_ruta, {
-                        'autores': autores, 
-                        'datos_api': {'titulo': titulo, 'isbn': isbn_final}
-                    })
 
-    # Este return DEBE estar aquí, fuera de los bloques IF anteriores
+                except Autor.DoesNotExist:
+                    messages.error(request, "El autor seleccionado no es válido.")
+                except Exception as e:
+                    messages.error(request, f"Error inesperado: {e}")
+
     return render(request, template_ruta, {'autores': autores, 'datos_api': datos_api})
+
+
 def lista_autores(request):
     autores = Autor.objects.all()
     return render(request, 'Gestion/templates/autores.html', {'autores': autores})
@@ -181,10 +183,8 @@ def crear_autor(request, id=None):
                 return redirect('lista_autores')
                 
         except IntegrityError:
-            # Este es el "seguro de vida" por si la base de datos rechaza el duplicado
             messages.error(request, "Error: Ya existe un autor con ese nombre y apellido.")
 
-    # 3. Contexto para el template (mantenemos los datos si hubo error)
     context = {
         'autor': autor,
         'titulo': nodo,

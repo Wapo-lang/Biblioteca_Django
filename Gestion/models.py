@@ -83,23 +83,25 @@ class Prestamos(models.Model):
         return total_retraso + Decimal(self.multa_fija)
 
     def save(self, *args, **kwargs):
-            referencia = self.fecha_prestamo or timezone.now().date()
-            if isinstance(referencia, str):
-                referencia = datetime.strptime(referencia, '%Y-%m-%d').date()
-                self.fecha_prestamo = referencia
+        # Forzamos la conversión a entero por si vienen como string desde el POST
+        try:
+            total = int(self.cantidad_total or 0)
+            disponibles = int(self.ejemplares_disponibles or 0)
+        except (ValueError, TypeError):
+            total = 0
+            disponibles = 0
 
-            if not self.fecha_max:
-                # Puedes dejar esto o manejarlo en la vista, pero aquí está bien
-                self.fecha_max = referencia + timedelta(days=14) 
+        if not self.pk:
+            self.ejemplares_disponibles = total
+            disponibles = total
+        
+        # Ahora la comparación es segura: int > int
+        self.disponible = disponibles > 0
 
-            # --- ELIMINAMOS EL BLOQUE QUE HACIA: if not self.pk: self.libro.ejemplares_disponibles -= 1 ---
-            # Ahora el modelo solo se encarga de guardar datos, no de mover stock.
+        if disponibles > total:
+            self.ejemplares_disponibles = total
 
-            if self.fecha_max and not self.fecha_devolucion:
-                if timezone.now().date() > self.fecha_max:
-                    self.estado = 'm'
-
-            super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
 
 class Multa(models.Model):
     prestamo = models.ForeignKey(Prestamos, related_name="multas", on_delete=models.PROTECT)
