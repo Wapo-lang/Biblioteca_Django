@@ -8,6 +8,7 @@ class AutorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
     def validate(self, data):
+        # Normalizamos a mayúsculas/minúsculas para evitar "Cervantes" vs "cervantes"
         nombre = data.get('nombre', self.instance.nombre if self.instance else '').strip()
         apellido = data.get('apellido', self.instance.apellido if self.instance else '').strip()
 

@@ -18,7 +18,6 @@ class LibroViewSet(viewsets.ModelViewSet):
 
     def retrieve(self, request, *args, **kwargs):
         isbn = kwargs.get('isbn')
-        # 1. ¿Ya lo tenemos en Django?
         instance = Libro.objects.filter(isbn=isbn).first()
         
         if instance:
